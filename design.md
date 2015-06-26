@@ -65,35 +65,36 @@ real 1/x     |         3 |   1 |    1 |  8
 ## program
 
 ```
-program_file = symbol header program
+program_file = symbol word_size program
 
 symbol = "JACK"
+word_size = Byte # (number of bits) / 8
 
-header = word_size num_of_initial_messages num_of_nodes
-word_size = Byte
-num_of_initial_messages = Word
-num_of_nodes = Word
+program = num_of_nodes nodes num_of_initial_messages initial_messages
 
-program = initial_messages nodes
-
-initial_messages = message { message }
-message = dest value
+num_of_nodes = Int
+num_of_initial_messages = Int
 
 nodes = node { node }
 node = one_dest_node | two_dest_node
 one_dest_node = instruction src dest
 two_dest_node = instruction dest dest
 src = Word
-dest = Word
+dest = Int
 
-instruction = instruction_id instruction_prefix presence_bit
-instruction_id = uint5_t
+instruction = src_presence_bit instruction_prefix instruction_id
+src_presence_bit = uint1_t
 instruction_prefix = uint2_t
-presence_bit = uint1_t
+instruction_id = uint5_t
+
+initial_messages = message { message }
+message = dest value
 
 src = Word
-dest = Word # index to a node
+dest = Int # index to a node
 
-Word = uint64_t
 Byte = uint8_t
+Int = uint64_t
+Real = double
+Word = Int | Real
 ```

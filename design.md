@@ -69,9 +69,10 @@ program_file = symbol header program
 
 symbol = "JACK"
 
-header = word_size program_size
+header = word_size num_of_initial_messages num_of_nodes
 word_size = Byte
-program_size = Word
+num_of_initial_messages = Word
+num_of_nodes = Word
 
 program = initial_messages nodes
 

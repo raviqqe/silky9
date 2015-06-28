@@ -24,7 +24,7 @@ processor = message_queue program_memory instruction_executer
 name         | id prefix | src | dest | id
 -------------|----------:|----:|-----:|---:
 copy         |         0 |   1 |    2 |  1
-dirty        |         0 |   1 |    1 |  2
+io           |         0 |   1 |    1 |  2
 bit not      |         1 |   1 |    1 |  1
 bit and      |         1 |   2 |    1 |  2
 bit or       |         1 |   2 |    1 |  3
@@ -54,10 +54,10 @@ real 1/x     |         3 |   1 |    1 |  8
   * false := 0b0..0
   * true /= false
   * virtual bool type has same expression as int
-* dirty
+* io
   * take an id of syscall and its arguments as a stream
-  * read command line arguments by dirty
-  * sync only by dirty and sync only for dirty
+  * read command line arguments by io
+  * sync only by io and sync only for io
 
 * bigger and smaller instuctions for int and real?
 

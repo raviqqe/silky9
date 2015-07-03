@@ -21,33 +21,34 @@ processor = message_queue program_memory instruction_executer
 
 ## instruction set
 
-name         | id prefix | src | dest | id
--------------|----------:|----:|-----:|---:
-copy         |         0 |   1 |    2 |  1
-io           |         0 |   1 |    1 |  2
-bit not      |         1 |   1 |    1 |  1
-bit and      |         1 |   2 |    1 |  2
-bit or       |         1 |   2 |    1 |  3
-bit xor      |         1 |   2 |    1 |  4
-bool not     |         1 |   1 |    1 |  9
-bool and     |         1 |   2 |    1 | 10
-bool or      |         1 |   2 |    1 | 11
-bool xor     |         1 |   2 |    1 | 12
-int ==       |         2 |   2 |    1 |  1
-int <0       |         2 |   1 |    1 |  2
-int +        |         2 |   2 |    1 |  3
-int *        |         2 |   2 |    1 |  4
-int -x       |         2 |   1 |    1 |  5
-int 2^x      |         2 |   1 |    1 |  6
-int log2(x)  |         2 |   1 |    1 |  7
-real ==      |         3 |   2 |    1 |  1
-real <0      |         3 |   1 |    1 |  2
-real +       |         3 |   2 |    1 |  3
-real *       |         3 |   2 |    1 |  4
-real -x      |         3 |   1 |    1 |  5
-real 2^x     |         3 |   1 |    1 |  6
-real log2(x) |         3 |   1 |    1 |  7
-real 1/x     |         3 |   1 |    1 |  8
+name         | id prefix | id | operands | dests
+-------------|----------:|---:|---------:|------:
+copy         |         0 |  0 |        1 |     2
+io           |         0 |  1 |        1 |     1
+shutdown     |         0 |  2 |        1 |     0
+bit not      |         1 |  0 |        1 |     1
+bit and      |         1 |  1 |        2 |     1
+bit or       |         1 |  2 |        2 |     1
+bit xor      |         1 |  3 |        2 |     1
+bool not     |         1 |  4 |        1 |     1
+bool and     |         1 |  5 |        2 |     1
+bool or      |         1 |  6 |        2 |     1
+bool xor     |         1 |  7 |        2 |     1
+int ==       |         2 |  0 |        2 |     1
+int <0       |         2 |  1 |        1 |     1
+int +        |         2 |  2 |        2 |     1
+int *        |         2 |  3 |        2 |     1
+int -x       |         2 |  4 |        1 |     1
+int 2^x      |         2 |  5 |        1 |     1
+int log2(x)  |         2 |  6 |        1 |     1
+real ==      |         3 |  0 |        2 |     1
+real <0      |         3 |  1 |        1 |     1
+real +       |         3 |  2 |        2 |     1
+real *       |         3 |  3 |        2 |     1
+real -x      |         3 |  4 |        1 |     1
+real 2^x     |         3 |  5 |        1 |     1
+real log2(x) |         3 |  6 |        1 |     1
+real 1/x     |         3 |  7 |        1 |     1
 
 * int's 1/x seems not to be defined
 * definition of virtual bool type
@@ -60,6 +61,8 @@ real 1/x     |         3 |   1 |    1 |  8
   * sync only by io and sync only for io
 
 * bigger and smaller instuctions for int and real?
+* io's operandBuff = fd?
+* shutdown by io?
 
 
 ## program
@@ -77,20 +80,20 @@ num_of_initial_messages = Int
 
 nodes = node { node }
 node = one_dest_node | two_dest_node
-one_dest_node = instruction src dest
+one_dest_node = instruction operand dest
 two_dest_node = instruction dest dest
-src = Word
+operand = Word
 dest = Int
 
-instruction = src_presence_bit instruction_prefix instruction_id
-src_presence_bit = uint1_t
+instruction = operand_presence_bit instruction_prefix instruction_id
+operand_presence_bit = uint1_t
 instruction_prefix = uint2_t
 instruction_id = uint5_t
 
 initial_messages = message { message }
 message = dest value
 
-src = Word
+operand = Word
 dest = Int # index to a node
 
 Byte = uint8_t

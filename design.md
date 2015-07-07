@@ -4,7 +4,7 @@
 
 ```
 computer = processor { processor }
-processor = message_queue program_memory instruction_executer
+processor = token_queue program_memory instruction_executer
 ```
 
 
@@ -73,10 +73,10 @@ program_file = symbol word_size program
 symbol = "JACK"
 word_size = Byte # (number of bits) / 8
 
-program = num_of_nodes nodes num_of_initial_messages initial_messages
+program = num_of_nodes nodes num_of_initial_tokens initial_tokens
 
 num_of_nodes = Int
-num_of_initial_messages = Int
+num_of_initial_tokens = Int
 
 nodes = node { node }
 node = one_dest_node | two_dest_node
@@ -90,14 +90,13 @@ operand_presence_bit = uint1_t
 instruction_prefix = uint2_t
 instruction_id = uint5_t
 
-initial_messages = message { message }
-message = dest value
-
-operand = Word
-dest = Int # index to a node
+initial_tokens = token { token }
+token = dest value
+dest = Int
+value = Word
 
 Byte = uint8_t
 Int = uint64_t
-Real = double
+Real = double # Real type must have the same endianness as Int type
 Word = Int | Real
 ```

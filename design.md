@@ -25,7 +25,6 @@ name         | id prefix | id | operands | dests
 -------------|----------:|---:|---------:|------:
 copy         |         0 |  0 |        1 |     2
 io           |         0 |  1 |        1 |     1
-shutdown     |         0 |  2 |        1 |     0
 bit not      |         1 |  0 |        1 |     1
 bit and      |         1 |  1 |        2 |     1
 bit or       |         1 |  2 |        2 |     1
@@ -59,10 +58,10 @@ real 1/x     |         3 |  7 |        1 |     1
   * take an id of syscall and its arguments as a stream
   * read command line arguments by io
   * sync only by io and sync only for io
+  * shutdown by io?
 
 * bigger and smaller instuctions for int and real?
 * io's operandBuff = fd?
-* shutdown by io?
 
 
 ## program

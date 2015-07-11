@@ -43,11 +43,11 @@ Message_getToken(const Message message)
 }
 
 
-Node
-Message_getNode(const Message message)
+NodeUpdate
+Message_getNodeUpdate(const Message message)
 {
   assert(message.tag == MessageTag_NODE_UPDATE);
-  return message.node;
+  return message.nodeUpdate;
 }
 
 

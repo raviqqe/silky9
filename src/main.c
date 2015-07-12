@@ -40,9 +40,11 @@ sendReal(NodeId dest, Real realNum)
 static Err
 executeInst(Node * const node, const Word operand)
 {
+  Err err = Err_OK;
+
   if (inst_getNumOfOperands(node->instId) == 2
       && !node->inst.operandPresentBit) {
-    node_storeOperand(node, operand);
+    Node_storeOperand(node, operand);
   } else {
     Word operandInNode;
     switch (node->instId) {
@@ -52,36 +54,37 @@ executeInst(Node * const node, const Word operand)
       break;
     case inst_IO:
       //sendInt(node->dest, io(operand.intNum));
-      return Err_OK;
       break;
     case inst_SHUTDOWN:
-      comm_sendMessage(Message_ofSignal(Signal_SHUTDOWN));
+      err = comm_sendMessage(Message_ofSignal(Signal_SHUTDOWN));
       break;
     case inst_BOOL_NOT:
-      sendInt(node->dest, !operand.intNum);
+      err = sendInt(node->dest, !operand.intNum);
       break;
     case inst_BOOL_AND:
-      sendInt(node->dest, operand.intNum && node_takeOutOperand(node).intNum);
+      err = sendInt(node->dest,
+                    operand.intNum && Node_takeOutOperand(node).intNum);
       break;
     case inst_BOOL_OR:
-      sendInt(node->dest, operand.intNum || node_takeOutOperand(node).intNum);
+      err = sendInt(node->dest,
+                    operand.intNum || Node_takeOutOperand(node).intNum);
       break;
     case inst_BOOL_XOR:
-      operandInNode.intNum = node_takeOutOperand(node).intNum;
-      sendInt(node->dest,
-          !(operand.intNum && operandInNode.intNum)
-          && !(operand.intNum || operandInNode.intNum));
+      operandInNode.intNum = Node_takeOutOperand(node).intNum;
+      err = sendInt(node->dest,
+                    !(operand.intNum && operandInNode.intNum)
+                    && !(operand.intNum || operandInNode.intNum));
       break;
     default:
-      DEBUG_MESSAGE(
-          "Unknown instruction detected. (instruction id: %x)",
-          node->instId);
-      return Err_INST;
+      DEBUG_MESSAGE("Unknown instruction detected. (instruction id: %x)",
+                    node->instId);
+      return Err_INST_UNKNOWN;
     }
   }
 
-  return Err_OK;
+  return err;
 }
+
 
 static Err
 processMessages(Node * const nodes)
@@ -101,12 +104,11 @@ processMessages(Node * const nodes)
       {
         NodeId localNodeId = NodeId_DUMMY;
 
-        err = comm_calcLocalNodeId(
-            Message_getToken(message).dest,
-            &localNodeId);
+        err = comm_calcLocalNodeId(Message_getToken(message).dest,
+                                   &localNodeId);
         if (err) {
-          DEBUG_MESSAGE(
-              "Failed to calculate a local node ID from a global one.");
+          DEBUG_MESSAGE("Failed to calculate a local node ID from a global "
+                        "one.");
           goto final;
         }
 
@@ -123,12 +125,11 @@ processMessages(Node * const nodes)
       {
         NodeId localNodeId = NodeId_DUMMY;
 
-        err = comm_calcLocalNodeId(
-            Message_getNodeUpdate(message).nodeId,
-            localNodeId);
+        err = comm_calcLocalNodeId(Message_getNodeUpdate(message).nodeId,
+                                   localNodeId);
         if (err) {
-          DEBUG_MESSAGE(
-              "Failed to calculate a local node ID from a global one.");
+          DEBUG_MESSAGE("Failed to calculate a local node ID from a global "
+                        "one.");
           goto final;
         }
 
@@ -140,16 +141,15 @@ processMessages(Node * const nodes)
       case Signal_SHUTDOWN:
         goto final;
       default:
-        DEBUG_MESSAGE(
-            "Unknown signal detected. (signal: %d)",
-            Message_getSignal(message));
-        err = Err_MESSAGE_SIGNAL;
+        DEBUG_MESSAGE("Unknown signal detected. (signal: %d)",
+                      Message_getSignal(message));
+        err = Err_SIGNAL_UNKNOWN;
         goto final;
       }
       break;
     default:
-      DEBUG_MESSAGE(
-          "Unknown message tag detected. (message tag: %d)", message.tag);
+      DEBUG_MESSAGE("Unknown message tag detected. (message tag: %d)",
+                    message.tag);
       err = Err_MESSAGE_TAG;
       goto final;
     } // switch (message.tag)
@@ -169,8 +169,8 @@ main(int numOfArgs, char **args)
 {
   Err err = comm_init();
   if (err) {
-    DEBUG_MESSAGE(
-        "Failed to initialize communication environment of processors.");
+    DEBUG_MESSAGE("Failed to initialize communication environment of "
+                  "processors.");
     goto justExit;
   }
 
@@ -214,15 +214,15 @@ main(int numOfArgs, char **args)
 final:
   err = comm_final();
   if (err) {
-    DEBUG_MESSAGE(
-        "Failed to finalize communication environment of processors.");
+    DEBUG_MESSAGE("Failed to finalize communication environment of "
+                  "processors.");
     goto exit;
   }
 
 justExit:
   if (err) {
-    DEBUG_MESSAGE(
-        "Failed to run Silky 9 because of the error of the code, %d", err);
+    DEBUG_MESSAGE("Failed to run Silky 9 because of the error of the code, "
+                  "%d.", err);
     return EXIT_FAILURE;
   } else {
     return EXIT_SUCCESS;

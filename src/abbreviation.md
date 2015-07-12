@@ -2,16 +2,17 @@
 * alloc : allocate
 * calc : calculation
 * comm : communication
-* conv : convert
 * config : configuration
+* conv : convert
 * dest : destination
 * err : error
-* final : finalize
+* final : finalize / finalization
   * use "last" to mean final
 * func : function
 * init : initialize
-* int : integer
 * inst : instruction
+* int : integer
 * num : number
+* prev : previous
 * proc : processor
 * real : real number

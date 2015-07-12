@@ -12,6 +12,9 @@ typedef enum {
   Err_COMM_INIT,
   Err_COMM_FINAL,
   Err_COMM_TAG,
+  Err_COMM_SEND,
+  Err_COMM_RECEIVE,
+  Err_COMM_PROC_ID,
 } Err;
 
 

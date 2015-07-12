@@ -8,7 +8,7 @@
 
 #define program_STDIN NULL
 
-bool program_loadProgram(char fileName[*]);
+Err program_loadProgram(const char fileName[*]);
 
 
 #endif

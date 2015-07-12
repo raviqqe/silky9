@@ -191,7 +191,7 @@ comm_sendMessage(const Message message)
   case MessageTag_TOKEN:
     {
       ProcId destProcId = ProcId_DUMMY;
-      Err err = calcDestProcId(message.token.dest, &destProcId);
+      Err err = calcDestProcId(Message_getToken(message).dest, &destProcId);
       if (err) {
         DEBUG_MESSAGE("Failed to calculate a destination processor ID from "
                       "a token's destination node ID.");
@@ -208,7 +208,8 @@ comm_sendMessage(const Message message)
   case MessageTag_NODE_UPDATE:
     {
       ProcId destProcId = ProcId_DUMMY;
-      Err err = calcDestProcId(message.nodeUpdate.nodeId, &destProcId);
+      Err err = calcDestProcId(Message_getNodeUpdate(message).nodeId,
+                               &destProcId);
       if (err) {
         DEBUG_MESSAGE("Failed to calculate a destination processor ID from "
                       "a node's node ID.");

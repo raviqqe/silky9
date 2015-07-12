@@ -94,8 +94,10 @@ executeInst(Node * const node, const Word operand)
 
 
 static Err
-processMessages(Node * const nodes)
+processMessages(NodeMemory * const nodeMemory)
 {
+  assert(nodeMemory != NULL);
+
   Err err = Err_OK;
 
   while (true) {
@@ -119,8 +121,15 @@ processMessages(Node * const nodes)
           goto final;
         }
 
-        err = executeInst(&nodes[localNodeId],
-                          Message_getToken(message).value);
+        Node *node = NULL;
+        err = NodeMemory_getNodeOfId(nodeMemory, localNodeId, &node);
+        if (err) {
+          DEBUG_MESSAGE("Failed to get an address of node from a node "
+                        "memory.");
+          goto final;
+        }
+
+        err = executeInst(node, Message_getToken(message).value);
         if (err) {
           DEBUG_MESSAGE("Failed to execute an instruction.");
           goto final;
@@ -139,7 +148,12 @@ processMessages(Node * const nodes)
           goto final;
         }
 
-        nodes[localNodeId] = Message_getNodeUpdate(message).node;
+        err = NodeMemory_setNodeOfId(nodeMemory, localNodeId,
+                                     Message_getNodeUpdate(message).node);
+        if (err) {
+          DEBUG_MESSAGE("Failed to update a node in a node memory.");
+          goto final;
+        }
       }
       break;
     case MessageTag_SIGNAL:
@@ -162,10 +176,9 @@ processMessages(Node * const nodes)
   } // while (true)
 
 final:
-  freeNodeMemory(nodes);
-
   return err;
 }
+
 
 
 // main routine
@@ -183,7 +196,13 @@ main(int numOfArgs, char **args)
   //
   // process command line options and set programFileName
   //
-  char *programFileName = args[numOfArgs - 1];
+  char *programFileName = NULL;
+  if (argc == 2) {
+    programFileName = args[numOfArgs - 1];
+  } else {
+    DEBUG_MESSAGE("Usage: %s <program file>", args[0]);
+    goto final;
+  }
   //
   // not implemented yet
   //
@@ -192,37 +211,53 @@ main(int numOfArgs, char **args)
   err = comm_amIMaster(&answer);
   if (err) {
     DEBUG_MESSAGE("Failed to check if I am the master processor.");
-    goto final;
+    goto finalComm;
   }
   if (answer) {
-    DEBUG_MESSAGE("I am the master processor!");
     Int numOfNodes = 0; // dummy value
-    err = program_loadProgram(programFilename); // Signal_MEM_SIZE?
+    err = program_loadProgram(programFileName); // Signal_MEM_SIZE?
     if (err) {
       DEBUG_MESSAGE("Failed to load a program to processors.");
-      goto final;
+      goto finalComm;
     }
   }
 
-  Node *nodes = NULL;
-  err = allocNodeMemory(&nodes);
+  NodeMemory nodeMemory = NodeMemory_DUMMY;
+  err = NodeMemory_init(&nodeMemory);
   if (err) {
-    DEBUG_MESSAGE("Failed to allocate initial memory for nodes.");
-    goto final;
+    DEBUG_MESSAGE("Failed to initialize a node memory.");
+    goto finalComm;
   }
 
-  err = processMessages(nodes); // resposible to free up node memory
+  err = processMessages(&nodeMemory);
   if (err) {
-    DEBUG_MESSAGE("Failed to processs messages.");
-    goto final;
+    DEBUG_MESSAGE("Failed to processs some messages.");
+    goto finalNodeMemory;
   }
 
-final:
-  err = comm_final();
+  Err errOnFinal = Err_OK;
+finalNodeMemory:
+  errOnFinal = NodeMemory_final(&nodeMemory);
+  if (errOnFinal) {
+    DEBUG_MESSAGE("Failed to finalize a node memory. (error code: %d)",
+                  errOnFinal);
+    goto finalComm;
+  }
+
+finalComm:
   if (err) {
+    errOnFinal = comm_sendMessage(Message_ofSignal(Signal_SHUTDOWN));
+    if (errOnFinal) {
+      DEBUG_MESSAGE("Failed to send shutdown signal to processors. "
+                    "(error code: %d)", errOnFinal);
+    }
+  }
+
+  errOnFinal = comm_final();
+  if (errOnFinal) {
     DEBUG_MESSAGE("Failed to finalize communication environment of "
-                  "processors.");
-    goto exit;
+                  "processors. (error code: %d)", errOnFinal);
+    goto justExit;
   }
 
 justExit:

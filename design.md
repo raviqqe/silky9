@@ -1,6 +1,6 @@
-# design
+# Design
 
-## architecture
+## Architecture
 
 ```
 computer = processor { processor }
@@ -8,7 +8,7 @@ processor = token_queue program_memory instruction_executer
 ```
 
 
-## behavior
+## Behavior
 
 ### launch of processors
 
@@ -19,7 +19,7 @@ processor = token_queue program_memory instruction_executer
 ### termination of processors
 
 
-## instruction set
+## Instruction set
 
 name         | id prefix | id | operands | dests
 -------------|----------:|---:|---------:|------:
@@ -64,7 +64,7 @@ real 1/x     |         3 |  7 |        1 |     1
 * io's operandBuff = fd?
 
 
-## program
+## Program
 
 ```
 program_file = symbol word_size program

@@ -47,6 +47,7 @@ executeInst(Node * const node, const Word operand)
     Node_storeOperand(node, operand);
   } else {
     Word operandInNode;
+
     switch (node->instId) {
     case inst_COPY:
       sendWord(node->subDest, operand);
@@ -80,6 +81,12 @@ executeInst(Node * const node, const Word operand)
                     node->instId);
       return Err_INST_UNKNOWN;
     }
+
+    if (err) {
+      DEBUG_MESSAGE("Failed to execute an instruction of code, %d.",
+                    node->instId);
+      return Err_INST;
+    }
   }
 
   return err;
@@ -108,28 +115,27 @@ processMessages(Node * const nodes)
                                    &localNodeId);
         if (err) {
           DEBUG_MESSAGE("Failed to calculate a local node ID from a global "
-                        "one.");
+                        "one of token's destination.");
           goto final;
         }
 
-        err = executeInst(
-            &nodes[localNodeId],
-            Message_getToken(message).value);
+        err = executeInst(&nodes[localNodeId],
+                          Message_getToken(message).value);
         if (err) {
           DEBUG_MESSAGE("Failed to execute an instruction.");
           goto final;
         }
       }
       break;
-    case MessageTag_NODE:
+    case MessageTag_NODE_UPDATE:
       {
         NodeId localNodeId = NodeId_DUMMY;
 
         err = comm_calcLocalNodeId(Message_getNodeUpdate(message).nodeId,
-                                   localNodeId);
+                                   &localNodeId);
         if (err) {
-          DEBUG_MESSAGE("Failed to calculate a local node ID from a global "
-                        "one.");
+          DEBUG_MESSAGE("Failed to calculate a local node ID from a global"
+                        "one of node update.");
           goto final;
         }
 

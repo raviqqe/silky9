@@ -14,8 +14,10 @@ Err comm_init();
 Err comm_final();
 Err comm_sendMessage(const Message message);
 Err comm_receiveMessage(Message * const message);
-bool comm_amIMaster();
-NodeId comm_calcLocalNodeId(const NodeId globalNodeId);
+Err comm_amIMaster(bool *answer);
+Err comm_calcLocalNodeId(const NodeId globalNodeId,
+                         NodeId * const localNodeId);
+Err comm_getNumOfProcs(Int *numOfProcs);
 
 
 #endif

@@ -9,8 +9,9 @@ typedef Int ProcId; // This is not in design, but compatible with it.
 // global variables
 
 MPI_Datatype MPI_Word = MPI_DATATYPE_NULL;
-MPI_Datatype MPI_Node = MPI_DATATYPE_NULL;
-MPI_Datatype MPI_Token = MPI_DATATYPE_NULL; // also carries Signal type value
+MPI_Datatype MPI_NodeUpdate = MPI_DATATYPE_NULL;
+MPI_Datatype MPI_Token = MPI_DATATYPE_NULL;
+MPI_Datatype MPI_Signal = MPI_DATATYPE_NULL;
 
 
 // functions
@@ -28,9 +29,8 @@ MPI_Datatype MPI_Token = MPI_DATATYPE_NULL; // also carries Signal type value
         "MPI_Comm_size", \
         (mpiErr))
 
-
 static Err
-calcDest(const NodeId globalNodeId, ProcId * const destProcId)
+calcDestProcId(const NodeId globalNodeId, ProcId * const destProcId)
 {
   Int numOfProcs = Int_DUMMY;
 
@@ -65,6 +65,18 @@ comm_calcLocalNodeId(const NodeId globalNodeId, NodeId * const localNodeId)
 #undef MPI_COMM_SIZE_DEBUG_MESSAGE
 
 
+#define MPI_TYPE_DEFINE_DEBUG_MESSAGE(type, mpiFuncName, mpiErr) \
+    MPI_DEBUG_MESSAGE( \
+        "Failed to define " type " type for MPI library.", \
+        (mpiFuncName), \
+        (mpiErr))
+
+#define MPI_TYPE_COMMIT_DEBUG_MESSAGE(type, mpiErr) \
+    MPI_DEBUG_MESSAGE( \
+        "Failed to commit " type " type for MPI library.", \
+        "MPI_Type_commit", \
+        (mpiErr))
+
 Err
 comm_init()
 {
@@ -84,55 +96,60 @@ comm_init()
 
   // Type declarations
 
+  //// Word
+
   mpiErr = MPI_Type_dup(MPI_UINT64_T, &MPI_Word);
     // The Int and Real type (i.e. any types Word type can express) must have
     // the same endianness according to Silky 9's design. So, the code above
     // should and must always work.
   if (mpiErr) {
-    MPI_DEBUG_MESSAGE(
-        "Failed to define Word type for MPI library.",
-        "MPI_Type_dup", mpiErr);
+    MPI_TYPE_DEFINE_DEBUG_MESSAGE("Word", "MPI_Type_dup", mpiErr);
     return Err_COMM_INIT;
   }
   mpiErr = MPI_Type_commit(&MPI_Word);
   if (mpiErr) {
-    MPI_DEBUG_MESSAGE(
-        "Failed to commit Word type for MPI library.",
-        "MPI_Type_commit", mpiErr);
+    MPI_TYPE_COMMIT_DEBUG_MESSAGE("Word", mpiErr);
+    return Err_COMM_INIT;
+  }
+
+  //// Signal
+
+  mpiErr = MPI_Type_dup(MPI_UINT64_T, &MPI_Signal);
+  if (mpiErr) {
+    MPI_TYPE_DEFINE_DEBUG_MESSAGE("Signal", "MPI_Type_dup", mpiErr);
+    return Err_COMM_INIT;
+  }
+  mpiErr = MPI_Type_commit(&MPI_Signal);
+  if (mpiErr) {
+    MPI_TYPE_COMMIT_DEBUG_MESSAGE("Signal", mpiErr);
     return Err_COMM_INIT;
   }
 
   //// Token
 
+  assert(2 * sizeof(Word) == sizeof(Token));
   mpiErr = MPI_Type_contiguous(2, MPI_Word, &MPI_Token);
   if (mpiErr) {
-    MPI_DEBUG_MESSAGE(
-        "Failed to define Token type for MPI library.",
-        "MPI_Type_contiguous", mpiErr);
+    MPI_TYPE_DEFINE_DEBUG_MESSAGE("Token", "MPI_Type_contiguous", mpiErr);
     return Err_COMM_INIT;
   }
   mpiErr = MPI_Type_commit(MPI_Token);
   if (mpiErr) {
-    MPI_DEBUG_MESSAGE(
-        "Failed to commit Token type for MPI library.",
-        "MPI_Type_commit", mpiErr);
+    MPI_TYPE_COMMIT_DEBUG_MESSAGE("Token", mpiErr);
     return Err_COMM_INIT;
   }
 
-  //// Node
+  //// NodeUpdate
 
-  mpiErr = MPI_Type_contiguous(3, MPI_Word, &MPI_Node);
+  assert(4 * sizeof(Word) == sizeof(NodeUpdate));
+  mpiErr = MPI_Type_contiguous(4, MPI_Word, &MPI_NodeUpdate);
   if (mpiErr) {
-    MPI_DEBUG_MESSAGE(
-        "Failed to define Node type for MPI library.",
-        "MPI_Type_contiguous", mpiErr);
+    MPI_TYPE_DEFINE_DEBUG_MESSAGE("NodeUpdate", "MPI_Type_contiguous", mpiErr);
     return Err_COMM_INIT;
   }
-  mpiErr = MPI_Type_commit(&MPI_Node);
+  mpiErr = MPI_Type_commit(&MPI_NodeUpdate);
   if (mpiErr) {
-    MPI_DEBUG_MESSAGE(
-        "Failed to commit Node type for MPI library.",
-        "MPI_Type_commit", mpiErr);
+    MPI_TYPE_COMMIT_DEBUG_MESSAGE("NodeUpdate", mpiErr);
     return Err_COMM_INIT;
   }
 
@@ -154,27 +171,89 @@ comm_final()
   return Err_OK;
 }
 
+#undef MPI_TYPE_DEFINE_DEBUG_MESSAGE
+#undef MPI_TYPE_COMMIT_DEBUG_MESSAGE
+
+
+#define MPI_SEND_DEBUG_MESSAGE(type, mpiErr) \
+    MPI_DEBUG_MESSAGE( \
+        "Failed to send " type " type value.", \
+        "MPI_Send", \
+        (mpiErr))
+
 
 Err
 comm_sendMessage(const Message message)
 {
+  int mpiErr = MPI_SUCCESS;
+
   switch (message.tag) {
   case MessageTag_TOKEN:
-    MPI_Send(&message.token, 1, MPI_Token, comm_calcDest);
+    {
+      ProcId destProcId = ProcId_DUMMY;
+      Err err = calcDestProcId(message.token.dest, &destProcId);
+      if (err) {
+        DEBUG_MESSAGE("Failed to calculate a destination processor ID from "
+                      "a token's destination node ID.");
+        return Err_COMM_SEND;
+      }
+      mpiErr = MPI_Send(&message.token, 1, MPI_Token, destProcId,
+                        message.tag, MPI_COMM_WORLD);
+      if (mpiErr) {
+        MPI_SEND_DEBUG_MESSAGE("Token", mpiErr);
+        return Err_COMM_SEND;
+      }
+    }
     break;
-  case MessageTag_NODE:
-    MPI_Send(&message.node, 1, MPI_Node, nodeId);
+  case MessageTag_NODE_UPDATE:
+    {
+      ProcId destProcId = ProcId_DUMMY;
+      Err err = calcDestProcId(message.nodeUpdate.nodeId, &destProcId);
+      if (err) {
+        DEBUG_MESSAGE("Failed to calculate a destination processor ID from "
+                      "a node's node ID.");
+        return Err_COMM_SEND;
+      }
+      mpiErr = MPI_Send(&message.nodeUpdate, 1, MPI_NodeUpdate, destProcId,
+                        message.tag, MPI_COMM_WORLD);
+      if (mpiErr) {
+        MPI_SEND_DEBUG_MESSAGE("NodeUpdate", mpiErr);
+        return Err_COMM_SEND;
+      }
+    }
     break;
   case MessageTag_SIGNAL:
-    MPI_Bcast(&message.signal, 1, MPI_Signal,);
+    mpiErr = MPI_Bcast(&message.signal, 1, MPI_Signal, 0, MPI_COMM_WORLD);
+    if (mpiErr) {
+      MPI_DEBUG_MESSAGE("Failed to broadcast Signal type value.",
+                        "MPI_Bcast", mpiErr);
+      return Err_COMM_SEND;
+    }
     break;
   default:
-    DEBUG_MESSAGE(
-        "Unknown message tag detected. (message tag: %d)", message.tag);
+    DEBUG_MESSAGE("Unknown message tag detected in a sent message. "
+                  "(message tag: %d)", message.tag);
     return Err_COMM_TAG;
   }
-  
+
   return Err_OK;
+}
+
+#undef MPI_SEND_DEBUG_MESSAGE
+
+
+#define MPI_RECV_DEBUG_MESSAGE(type, mpiErr) \
+    MPI_DEBUG_MESSAGE( \
+        "Failed to receive " type " type value.", \
+        "MPI_Recv", \
+        (mpiErr))
+
+int
+wrapperOf_MPI_Recv(void * const buff, MPI_Datatype datatype,
+           MPI_Status * const status)
+{
+  return MPI_Recv(buff, 1, datatype, MPI_ANY_SOURCE, MPI_ANY_TAG,
+                  MPI_COMM_WORLD, status);
 }
 
 
@@ -183,14 +262,47 @@ comm_receiveMessage(Message * const message)
 {
   MPI_Status status;
 
-  int mpiErr = MPI_Recv();
+  int mpiErr = MPI_Probe(MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
   if (mpiErr) {
-    MPI_DEBUG_MESSAGE(
+    MPI_DEBUG_MESSAGE("Failed to get status of the top message.",
+                      "MPI_Probe", mpiErr);
     return Err_COMM_RECEIVE;
+  }
+
+  message->tag = status.MPI_TAG;
+
+  switch (status.MPI_TAG) {
+  case MessageTag_TOKEN:
+    mpiErr = wrapperOf_MPI_Recv(&message->token, MPI_Token, &status);
+    if (mpiErr) {
+      MPI_RECV_DEBUG_MESSAGE("Token", mpiErr);
+      return Err_COMM_RECEIVE;
+    }
+    break;
+  case MessageTag_NODE_UPDATE:
+    mpiErr = wrapperOf_MPI_Recv(&message->nodeUpdate, MPI_NodeUpdate, &status);
+    if (mpiErr) {
+      MPI_RECV_DEBUG_MESSAGE("NodeUpdate", mpiErr);
+      return Err_COMM_RECEIVE;
+    }
+    break;
+  case MessageTag_SIGNAL:
+    mpiErr = wrapperOf_MPI_Recv(&message->signal, MPI_Signal, &status);
+    if (mpiErr) {
+      MPI_RECV_DEBUG_MESSAGE("Signal", mpiErr);
+      return Err_COMM_RECEIVE;
+    }
+    break;
+  default:
+    DEBUG_MESSAGE("Unknown message tag detected in a received message. "
+                  "(message tag: %d)", status.MPI_TAG);
+    return Err_COMM_TAG;
   }
 
   return Err_OK;
 }
+
+#undef MPI_RECV_DEBUG_MESSAGE
 
 
 Err
@@ -200,9 +312,8 @@ comm_amIMaster(bool *answer)
 
   int mpiErr = MPI_Comm_rank(MPI_COMM_WORLD, &myRank);
   if (mpiErr) {
-    MPI_DEBUG_MESSAGE(
-        "Failed to get the rank of the current process.",
-        "MPI_Comm_rank", mpiErr);
+    MPI_DEBUG_MESSAGE("Failed to get the rank of the current process.",
+                      "MPI_Comm_rank", mpiErr);
     return Err_COMM_PROC_ID;
   }
 

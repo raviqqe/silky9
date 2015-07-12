@@ -17,7 +17,6 @@ Err comm_receiveMessage(Message * const message);
 Err comm_amIMaster(bool *answer);
 Err comm_calcLocalNodeId(const NodeId globalNodeId,
                          NodeId * const localNodeId);
-Err comm_getNumOfProcs(Int *numOfProcs);
 
 
 #endif

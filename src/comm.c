@@ -29,8 +29,8 @@ MPI_Datatype MPI_Signal = MPI_DATATYPE_NULL;
         "MPI_Comm_size", \
         (mpiErr))
 
-Err
-comm_getNumOfProcs(Int *numOfProcs)
+static Err
+getNumOfProcs(Int *numOfProcs)
 {
   int mpiErr = MPI_Comm_size(MPI_COMM_WORLD, numOfProcs);
   if (mpiErr) {
@@ -47,7 +47,7 @@ calcDestProcId(const NodeId globalNodeId, ProcId * const destProcId)
 {
   Int numOfProcs = Int_DUMMY;
 
-  Err err = comm_getNumOfProcs(&numOfProcs);
+  Err err = getNumOfProcs(&numOfProcs);
   if (err) {
     DEBUG_MESSAGE("Failed to get number of processors.");
     return err;
@@ -64,7 +64,7 @@ comm_calcLocalNodeId(const NodeId globalNodeId, NodeId * const localNodeId)
 {
   Int numOfProcs = Int_DUMMY;
 
-  Err err = comm_getNumOfProcs(&numOfProcs);
+  Err err = getNumOfProcs(&numOfProcs);
   if (err) {
     DEBUG_MESSAGE("Failed to get number of processors.");
     return err;

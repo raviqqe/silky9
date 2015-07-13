@@ -1,4 +1,5 @@
 * abbreviation : abbreviation word list
+* arg : argument
 * alloc : allocate
 * calc : calculation
 * comm : communication

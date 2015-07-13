@@ -9,9 +9,6 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <stdint.h>
-#include <stderr.h>
-#include <stdbool.h>
 
 
 // functions
@@ -43,7 +40,7 @@ executeInst(Node * const node, const Word operand)
   Err err = Err_OK;
 
   if (inst_getNumOfOperands(node->instId) == 2
-      && !node->inst.operandPresentBit) {
+      && !node->operandPresentBit) {
     Node_storeOperand(node, operand);
   } else {
     Word operandInNode;
@@ -85,7 +82,7 @@ executeInst(Node * const node, const Word operand)
     if (err) {
       DEBUG_MESSAGE("Failed to execute an instruction of code, %d.",
                     node->instId);
-      return Err_INST;
+      return Err_INST_EXEC;
     }
   }
 
@@ -186,26 +183,20 @@ final:
 int
 main(int numOfArgs, char **args)
 {
+  char *programFileName = NULL;
+  if (numOfArgs == 2) {
+    programFileName = args[1];
+  } else {
+    DEBUG_MESSAGE("Usage: %s <program file>", args[0]);
+    goto justExit;
+  }
+
   Err err = comm_init();
   if (err) {
     DEBUG_MESSAGE("Failed to initialize communication environment of "
                   "processors.");
     goto justExit;
   }
-
-  //
-  // process command line options and set programFileName
-  //
-  char *programFileName = NULL;
-  if (argc == 2) {
-    programFileName = args[numOfArgs - 1];
-  } else {
-    DEBUG_MESSAGE("Usage: %s <program file>", args[0]);
-    goto final;
-  }
-  //
-  // not implemented yet
-  //
 
   bool answer;
   err = comm_amIMaster(&answer);

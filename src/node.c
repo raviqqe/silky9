@@ -1,32 +1,43 @@
 #include "node.h"
 
 
+Node
+Node_of(const Int header, const Word operandBuff, const Int dest)
+{
+  return (Node){
+    .header = header,
+    .operandBuff = operandBuff,
+    .dest = dest,
+  };
+}
+
+
 void
 Node_storeOperand(Node * const node, Word operand)
 {
-  assert(node.operandPresentBit == false);
-  assert(node.operandBuff == Word_DUMMY);
+  assert(node->operandPresentBit == false);
+  //assert(node.operandBuff == Word_DUMMY);
 
-  node.operandPresentBit = true;
-  node.operandBuff = operand;
+  node->operandPresentBit = true;
+  node->operandBuff = operand;
 }
 
 
 Word
 Node_takeOutOperand(Node * const node)
 {
-  assert(node.operandPresentBit == true);
+  assert(node->operandPresentBit == true);
 
-  Word returnedOperand = node.operandBuff;
-  node.operandPresentBit = false;
-  node.operandBuff = Word_DUMMY;
+  Word returnedOperand = node->operandBuff;
+  node->operandPresentBit = false;
+  node->operandBuff = Word_DUMMY;
 
   return returnedOperand;
 }
 
 
 Word
-Node_copyOperand(const Node * const node)
+Node_copyOperand(const Node node)
 {
   return node.operandBuff;
 }
@@ -37,7 +48,7 @@ NodeMemory_init(NodeMemory * const nodeMemory)
 {
   assert(nodeMemory != NULL);
 
-  nodeMemory->capacity = config_INITIAL_CAPACITY_OF_NODE_MEMORY;
+  nodeMemory->capacity = config_INITIAL_NODE_MEMORY_CAPACITY;
   nodeMemory->nodes = malloc(sizeof(Node) * nodeMemory->capacity);
   if (nodeMemory->nodes == NULL) {
     DEBUG_MESSAGE("Failed to do malloc() for a node memory.");
@@ -65,7 +76,7 @@ Err
 NodeMemory_getNodeOfId(NodeMemory * const nodeMemory, const NodeId nodeId,
                        Node ** const node)
 {
-  if (NodeId >= nodeMemory->capacity) {
+  if (nodeId >= nodeMemory->capacity) {
     DEBUG_MESSAGE("Node id is out of range of a node mermory.");
     return Err_MEMORY_OUT_OF_RANGE;
   }
@@ -87,7 +98,7 @@ Err
 NodeMemory_setNodeOfId(NodeMemory * const nodeMemory, const NodeId nodeId,
                        const Node node)
 {
-  if (NodeId >= nodeMemory->capacity
+  if (nodeId >= nodeMemory->capacity
       && (calcNewCapacity(nodeMemory->capacity)
       <= config_MAX_NODE_MEMORY_CAPACITY)) {
     Int oldCapacity = nodeMemory->capacity;

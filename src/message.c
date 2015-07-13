@@ -1,6 +1,26 @@
 #include "message.h"
 
 
+Token
+Token_of(const NodeId dest, const Word value)
+{
+  return (Token){
+    .dest = dest,
+    .value = value,
+  };
+}
+
+
+NodeUpdate
+NodeUpdate_of(const NodeId nodeId, const Node node)
+{
+  return (NodeUpdate){
+    .nodeId = nodeId,
+    .node = node,
+  };
+}
+
+
 Message
 Message_ofToken(const Token token)
 {

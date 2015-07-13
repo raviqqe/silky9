@@ -7,7 +7,7 @@
 #include "type.h"
 
 
-typedef const enum {
+typedef enum {
   MessageTag_TOKEN = 0,
   MessageTag_NODE_UPDATE = 1,
   MessageTag_SIGNAL = 2,
@@ -35,17 +35,17 @@ typedef struct {
 NodeUpdate NodeUpdate_of(const NodeId nodeId, const Node node);
 
 
-typedef const enum {
+typedef enum {
   Signal_SHUTDOWN = 0,
 } Signal; // Int size in design (not VM's feature)
 
 
-typedef const struct {
+typedef struct {
   const MessageTag tag;
   const union {
     Token token;
     NodeUpdate nodeUpdate;
-    Signal signal;
+    Int signal; // Signal type but Int type to allocate enough space
   }; // payload
 } Message;
 

@@ -19,8 +19,8 @@ checkSymbol(FILE *programFile)
     return Err_PROGRAM_FILE;
   }
 
-  int strcmpErr = strcmp(symbolOfFile, kSymbol, strlen(kSymbol));
-  if (strcmpErr) {
+  int strncmpErr = strncmp(symbolOfFile, kSymbol, strlen(kSymbol));
+  if (strncmpErr) {
     DEBUG_MESSAGE(
         "Program file's symbol, %s doesn't match with the correct symbol, "
         "\"%s\".", symbolOfFile, kSymbol);
@@ -40,7 +40,7 @@ checkWordSize(FILE *programFile)
   if (readSize != sizeof(sizeOfWord)) {
     FREAD_DEBUG_MESSAGE(readSize);
     return Err_PROGRAM_FILE;
-  else if (sizeOfWord != sizeof(Word)) {
+  } else if (sizeOfWord != sizeof(Word)) {
     DEBUG_MESSAGE(
         "Program file's word size doesn't match with virtual machine's. "
         "(machine: %d * 8 bits, file: %d * 8 bits)", sizeof(Word), sizeOfWord);
@@ -51,17 +51,17 @@ checkWordSize(FILE *programFile)
 }
 
 
-static Err
-readByte(FILE *programFile, Byte *byteMem)
-{
-  size_t readSize = fread(byteMem, 1, sizeof(*byteMem), programFile);
-  if (readSize != sizeof(*byteMem)) {
-    FREAD_DEBUG_MESSAGE(readSize);
-    return Err_PROGRAM_FILE;
-  }
-
-  return Err_OK;
-}
+//static Err
+//readByte(FILE *programFile, Byte *byteMem)
+//{
+//  size_t readSize = fread(byteMem, 1, sizeof(*byteMem), programFile);
+//  if (readSize != sizeof(*byteMem)) {
+//    FREAD_DEBUG_MESSAGE(readSize);
+//    return Err_PROGRAM_FILE;
+//  }
+//
+//  return Err_OK;
+//}
 
 
 static Err
@@ -96,7 +96,10 @@ readNodeId(FILE *programFile, NodeId *nodeIdMem)
 static Err
 readNode(FILE *programFile, Node *node)
 {
-  Err err = readByte(programFile, &node.instField);
+  *node = Node_DUMMY;
+
+  Int header;
+  Err err = readInt(programFile, &header);
   if (err) {
     DEBUG_MESSAGE(
         "Failed to read the instruction field of a node from the program "
@@ -106,7 +109,8 @@ readNode(FILE *programFile, Node *node)
 
   // If the read node's first word field is a operand buffer,
   // this process makes no sense.
-  err = readNodeId(programFile, &node.subDest);
+  NodeId subDest;
+  err = readNodeId(programFile, &subDest);
   if (err) {
     DEBUG_MESSAGE(
         "Failed to read the sub-destination (or the operand buffer of a "
@@ -114,12 +118,15 @@ readNode(FILE *programFile, Node *node)
     return err;
   }
 
-  err = readNodeId(programFile, &nodeUpdate.dest);
+  NodeId dest;
+  err = readNodeId(programFile, &dest);
   if (err) {
     DEBUG_MESSAGE(
         "Failed to read the destination of a node from the program file.");
     return err;
   }
+
+  *node = Node_of(header, Word_ofInt(subDest), dest);
 
   return Err_OK;
 }
@@ -137,16 +144,14 @@ dispatchNodes(FILE *programFile)
   }
 
   for (Int nodeId = 0; nodeId < numOfNodes; nodeId++) {
-    NodeUpdate nodeUpdate = NodeUpdate_DUMMY;
-    nodeUpdate.nodeId = nodeId;
-
-    err = readNode(programFile, &nodeUpdate.node);
+    Node node;
+    err = readNode(programFile, &node);
     if (err) {
       DEBUG_MESSAGE("Failed to read a node from the program file.");
       return err;
     }
 
-    err = comm_sendMessage(Message_ofNodeUpdate(nodeUpdate));
+    err = comm_sendMessage(Message_ofNodeUpdate(NodeUpdate_of(nodeId, node)));
     if (err) {
       DEBUG_MESSAGE("Failed to send a node while reading the program file.");
       return err;
@@ -170,9 +175,8 @@ sendInitialTokens(FILE *programFile)
   }
 
   for (Int i = 0; i < numOfInitialTokens; i++) {
-    Token token = Token_DUMMY;
-
-    err = readNodeId(programFile, &token.dest);
+    NodeId dest;
+    err = readNodeId(programFile, &dest);
     if (err) {
       DEBUG_MESSAGE(
           "Failed to read the destination of a initial token from the program "
@@ -180,7 +184,8 @@ sendInitialTokens(FILE *programFile)
       return err;
     }
 
-    err = readWord(programFile, &token.value);
+    Word value;
+    err = readWord(programFile, &value);
     if (err) {
       DEBUG_MESSAGE(
           "Failed to read the value of a initial token from the program "
@@ -188,7 +193,7 @@ sendInitialTokens(FILE *programFile)
       return err;
     }
 
-    err = comm_sendMessage(Message_ofToken(token));
+    err = comm_sendMessage(Message_ofToken(Token_of(dest, value)));
     if (err) {
       DEBUG_MESSAGE("Failed to send a token while reading the program file.");
       return err;
@@ -242,7 +247,7 @@ program_loadProgram(const char programFileName[])
 
   Err err = loadProgramFromFileStruct(programFile);
   if (err && programFile == stdin) {
-    DEBUG_MESSAGE("Failed to load the program from stdin.",
+    DEBUG_MESSAGE("Failed to load the program from stdin.");
   } else if (err) {
     DEBUG_MESSAGE(
         "Failed to load the program from the program file, %s.",

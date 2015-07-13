@@ -2,6 +2,9 @@
 #define _TYPE_H
 
 
+#include <stdint.h>
+
+
 typedef uint8_t Byte;
 typedef uint64_t Int;
 typedef double Real;
@@ -11,16 +14,19 @@ typedef union {
   Real realNum;
 } Word;
 
-Word Word_ofInt(intNum);
-Word Word_ofReal(realNum);
+Word Word_ofInt(const Int intNum);
+Word Word_ofReal(const Real realNum);
 
 
 // dummy values
 
-const Byte Byte_DUMMY = 0xEF;
-const Int Int_DUMMY = 0xDEADBEEF;
-const Word Word_DUMMY = {.intNum = 0xDEADBEEF};
-const Real Real_DUMMY = (Word){.intNum = 0xDEADBEEF}.realNum;
+#define Byte_DUMMY 0xEF
+#define Int_DUMMY 0xDEADBEEF
+#define Word_DUMMY (Word){.intNum = 0xDEADBEEF}
+#define Real_DUMMY (Word){.intNum = 0xDEADBEEF}.realNum
+
+
+#define int_DUMMY 0xDEADBEEF
 
 
 #endif

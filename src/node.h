@@ -2,8 +2,14 @@
 #define _NODE_H
 
 
-#include "type.h"
+#include "config.h"
+#include "debug.h"
+#include "err.h"
 #include "inst.h"
+#include "type.h"
+#include <assert.h>
+#include <stdbool.h>
+#include <stdlib.h>
 
 
 typedef Int NodeId; // this is not in design, but conforms to it.
@@ -32,9 +38,12 @@ typedef struct {
   .dest = NodeId_DUMMY, \
 }
 
+Node Node_of(const Int header, const Word operandBuff, const NodeId dest);
+
+
 void Node_storeOperand(Node * const node, Word operand);
 Word Node_takeOutOperand(Node * const node);
-Word Node_copyOperand(const Node * const node);
+Word Node_copyOperand(const Node node);
 
 
 typedef struct {
@@ -44,7 +53,7 @@ typedef struct {
 
 #define NodeMemory_DUMMY (NodeMemory){ \
   .capacity = Int_DUMMY, \
-  .nodes = NULL,
+  .nodes = NULL, \
 }
 
 Err NodeMemory_init(NodeMemory *nodeMemory);

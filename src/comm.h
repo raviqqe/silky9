@@ -3,9 +3,12 @@
 
 
 #include "debug.h"
+#include "err.h"
+#include "message.h"
 #include "node.h"
 #include "type.h"
-#include "message.h"
+#include <mpi.h>
+#include <stdbool.h>
 
 
 // functions

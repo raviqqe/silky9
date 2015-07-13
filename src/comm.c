@@ -4,6 +4,7 @@
 // types
 
 typedef Int ProcId; // This is not in design, but compatible with it.
+#define ProcId_DUMMY Int_DUMMY
 
 
 // global variables
@@ -30,13 +31,16 @@ MPI_Datatype MPI_Signal = MPI_DATATYPE_NULL;
         (mpiErr))
 
 static Err
-getNumOfProcs(Int *numOfProcs)
+getNumOfProcs(Int * const numOfProcs)
 {
-  int mpiErr = MPI_Comm_size(MPI_COMM_WORLD, numOfProcs);
+  int size = int_DUMMY;
+  int mpiErr = MPI_Comm_size(MPI_COMM_WORLD, &size);
   if (mpiErr) {
     MPI_COMM_SIZE_DEBUG_MESSAGE(mpiErr);
     return Err_COMM_NUM_OF_PROCS;
   }
+
+  *numOfProcs = size;
 
   return Err_OK;
 }
@@ -146,7 +150,7 @@ comm_init()
     MPI_TYPE_DEFINE_DEBUG_MESSAGE("Token", "MPI_Type_contiguous", mpiErr);
     return Err_COMM_INIT;
   }
-  mpiErr = MPI_Type_commit(MPI_Token);
+  mpiErr = MPI_Type_commit(&MPI_Token);
   if (mpiErr) {
     MPI_TYPE_COMMIT_DEBUG_MESSAGE("Token", mpiErr);
     return Err_COMM_INIT;
@@ -211,7 +215,7 @@ comm_sendMessage(const Message message)
         return Err_COMM_SEND;
       }
       mpiErr = MPI_Send(&message.token, 1, MPI_Token, destProcId,
-                        message.tag, MPI_COMM_WORLD);
+                        MessageTag_TOKEN, MPI_COMM_WORLD);
       if (mpiErr) {
         MPI_SEND_DEBUG_MESSAGE("Token", mpiErr);
         return Err_COMM_SEND;
@@ -229,7 +233,7 @@ comm_sendMessage(const Message message)
         return Err_COMM_SEND;
       }
       mpiErr = MPI_Send(&message.nodeUpdate, 1, MPI_NodeUpdate, destProcId,
-                        message.tag, MPI_COMM_WORLD);
+                        MessageTag_NODE_UPDATE, MPI_COMM_WORLD);
       if (mpiErr) {
         MPI_SEND_DEBUG_MESSAGE("NodeUpdate", mpiErr);
         return Err_COMM_SEND;
@@ -237,11 +241,22 @@ comm_sendMessage(const Message message)
     }
     break;
   case MessageTag_SIGNAL:
-    mpiErr = MPI_Bcast(&message.signal, 1, MPI_Signal, 0, MPI_COMM_WORLD);
-    if (mpiErr) {
-      MPI_DEBUG_MESSAGE("Failed to broadcast Signal type value.",
-                        "MPI_Bcast", mpiErr);
-      return Err_COMM_SEND;
+    {
+      Int numOfProcs = Int_DUMMY;
+      Err err = getNumOfProcs(&numOfProcs);
+      if (err) {
+        DEBUG_MESSAGE("Failed to get number of all processors.");
+        return Err_COMM_NUM_OF_PROCS;
+      }
+
+      for (Int destProcId = 0; destProcId < numOfProcs; destProcId++) {
+        mpiErr = MPI_Send(&message.signal, 1, MPI_Signal, destProcId,
+                          MessageTag_SIGNAL, MPI_COMM_WORLD);
+        if (mpiErr) {
+          MPI_SEND_DEBUG_MESSAGE("Signal", mpiErr);
+          return Err_COMM_SEND;
+        }
+      }
     }
     break;
   default:
@@ -283,28 +298,38 @@ comm_receiveMessage(Message * const message)
     return Err_COMM_RECEIVE;
   }
 
-  message->tag = status.MPI_TAG;
-
   switch (status.MPI_TAG) {
   case MessageTag_TOKEN:
-    mpiErr = wrapperOf_MPI_Recv(&message->token, MPI_Token, &status);
-    if (mpiErr) {
-      MPI_RECV_DEBUG_MESSAGE("Token", mpiErr);
-      return Err_COMM_RECEIVE;
+    {
+      Token token = Token_DUMMY;
+      mpiErr = wrapperOf_MPI_Recv(&token, MPI_Token, &status);
+      if (mpiErr) {
+        MPI_RECV_DEBUG_MESSAGE("Token", mpiErr);
+        return Err_COMM_RECEIVE;
+      }
+      *message = Message_ofToken(token);
     }
     break;
   case MessageTag_NODE_UPDATE:
-    mpiErr = wrapperOf_MPI_Recv(&message->nodeUpdate, MPI_NodeUpdate, &status);
-    if (mpiErr) {
-      MPI_RECV_DEBUG_MESSAGE("NodeUpdate", mpiErr);
-      return Err_COMM_RECEIVE;
+    {
+      NodeUpdate nodeUpdate = NodeUpdate_DUMMY;
+      mpiErr = wrapperOf_MPI_Recv(&nodeUpdate, MPI_NodeUpdate, &status);
+      if (mpiErr) {
+        MPI_RECV_DEBUG_MESSAGE("NodeUpdate", mpiErr);
+        return Err_COMM_RECEIVE;
+      }
+      *message = Message_ofNodeUpdate(nodeUpdate);
     }
     break;
   case MessageTag_SIGNAL:
-    mpiErr = wrapperOf_MPI_Recv(&message->signal, MPI_Signal, &status);
-    if (mpiErr) {
-      MPI_RECV_DEBUG_MESSAGE("Signal", mpiErr);
-      return Err_COMM_RECEIVE;
+    {
+      Int signal = Int_DUMMY;
+      mpiErr = wrapperOf_MPI_Recv(&signal, MPI_Signal, &status);
+      if (mpiErr) {
+        MPI_RECV_DEBUG_MESSAGE("Signal", mpiErr);
+        return Err_COMM_RECEIVE;
+      }
+      *message = Message_ofSignal(signal);
     }
     break;
   default:
@@ -322,7 +347,7 @@ comm_receiveMessage(Message * const message)
 Err
 comm_amIMaster(bool *answer)
 {
-  Int myRank = Int_DUMMY;
+  int myRank = int_DUMMY;
 
   int mpiErr = MPI_Comm_rank(MPI_COMM_WORLD, &myRank);
   if (mpiErr) {

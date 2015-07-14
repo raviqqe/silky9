@@ -11,6 +11,7 @@ typedef enum {
   Err_COMM_RECEIVE,
   Err_COMM_SEND,
   Err_COMM_TAG,
+  Err_COMMAND_ARGS,
   Err_INST_EXEC,
   Err_INST_UNKNOWN,
   Err_MEMORY_ALLOC,

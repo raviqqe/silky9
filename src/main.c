@@ -27,11 +27,11 @@ sendInt(NodeId dest, Int intNum)
 }
 
 
-static Err
-sendReal(NodeId dest, Real realNum)
-{
-  return sendWord(dest, Word_ofReal(realNum));
-}
+//static Err
+//sendReal(NodeId dest, Real realNum)
+//{
+//  return sendWord(dest, Word_ofReal(realNum));
+//}
 
 
 static Err
@@ -183,15 +183,18 @@ final:
 int
 main(int numOfArgs, char **args)
 {
+  Err err = Err_OK;
+
   char *programFileName = NULL;
   if (numOfArgs == 2) {
     programFileName = args[1];
   } else {
     DEBUG_MESSAGE("Usage: %s <program file>", args[0]);
+    err = Err_COMMAND_ARGS;
     goto justExit;
   }
 
-  Err err = comm_init();
+  err = comm_init();
   if (err) {
     DEBUG_MESSAGE("Failed to initialize communication environment of "
                   "processors.");
@@ -205,7 +208,6 @@ main(int numOfArgs, char **args)
     goto finalComm;
   }
   if (answer) {
-    Int numOfNodes = 0; // dummy value
     err = program_loadProgram(programFileName); // Signal_MEM_SIZE?
     if (err) {
       DEBUG_MESSAGE("Failed to load a program to processors.");

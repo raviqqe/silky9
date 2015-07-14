@@ -1,7 +1,6 @@
 cflags = -g -Wall
 ldflags = -L/usr/lib/openmpi -lmpi
 builddir = obj
-#source_files = main.c comm.c node.c inst.c type.c message.c program.c
 
 
 rule ld

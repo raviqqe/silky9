@@ -1,0 +1,20 @@
+cflags = -g -Wall
+ldflags = -L/usr/lib/openmpi -lmpi
+builddir = obj
+#source_files = main.c comm.c node.c inst.c type.c message.c program.c
+
+
+rule ld
+  command = clang $ldflags $in -o $out
+
+rule cc
+  command = clang $cflags -c $in -o $out
+
+build main: ld comm.o inst.o main.o message.o node.o program.o type.o
+build comm.o: cc comm.c
+build inst.o: cc inst.c
+build main.o: cc main.c
+build message.o: cc message.c
+build node.o: cc node.c
+build program.o: cc program.c
+build type.o: cc type.c

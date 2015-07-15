@@ -10,6 +10,7 @@
 * final : finalize / finalization
   * use "last" to mean final
 * func : function
+* info : information
 * init : initialize
 * inst : instruction
 * int : integer

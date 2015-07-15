@@ -74,13 +74,13 @@ executeInst(Node * const node, const Word operand)
                     && !(operand.intNum || operandInNode.intNum));
       break;
     default:
-      DEBUG_MESSAGE("Unknown instruction detected. (instruction id: %x)",
+      DEBUG_INFO("Unknown instruction detected. (instruction id: %x)",
                     node->instId);
       return Err_INST_UNKNOWN;
     }
 
     if (err) {
-      DEBUG_MESSAGE("Failed to execute an instruction of code, %d.",
+      DEBUG_INFO("Failed to execute an instruction of code, %d.",
                     node->instId);
       return Err_INST_EXEC;
     }
@@ -101,7 +101,7 @@ processMessages(NodeMemory * const nodeMemory)
     Message message;
     err = comm_receiveMessage(&message);
     if (err) {
-      DEBUG_MESSAGE("Failed to receive a message.");
+      DEBUG_INFO("Failed to receive a message.");
       goto final;
     }
 
@@ -113,7 +113,7 @@ processMessages(NodeMemory * const nodeMemory)
         err = comm_calcLocalNodeId(Message_getToken(message).dest,
                                    &localNodeId);
         if (err) {
-          DEBUG_MESSAGE("Failed to calculate a local node ID from a global "
+          DEBUG_INFO("Failed to calculate a local node ID from a global "
                         "one of token's destination.");
           goto final;
         }
@@ -121,14 +121,14 @@ processMessages(NodeMemory * const nodeMemory)
         Node *node = NULL;
         err = NodeMemory_getNodeOfId(nodeMemory, localNodeId, &node);
         if (err) {
-          DEBUG_MESSAGE("Failed to get an address of node from a node "
+          DEBUG_INFO("Failed to get an address of node from a node "
                         "memory.");
           goto final;
         }
 
         err = executeInst(node, Message_getToken(message).value);
         if (err) {
-          DEBUG_MESSAGE("Failed to execute an instruction.");
+          DEBUG_INFO("Failed to execute an instruction.");
           goto final;
         }
       }
@@ -140,7 +140,7 @@ processMessages(NodeMemory * const nodeMemory)
         err = comm_calcLocalNodeId(Message_getNodeUpdate(message).nodeId,
                                    &localNodeId);
         if (err) {
-          DEBUG_MESSAGE("Failed to calculate a local node ID from a global"
+          DEBUG_INFO("Failed to calculate a local node ID from a global"
                         "one of node update.");
           goto final;
         }
@@ -148,7 +148,7 @@ processMessages(NodeMemory * const nodeMemory)
         err = NodeMemory_setNodeOfId(nodeMemory, localNodeId,
                                      Message_getNodeUpdate(message).node);
         if (err) {
-          DEBUG_MESSAGE("Failed to update a node in a node memory.");
+          DEBUG_INFO("Failed to update a node in a node memory.");
           goto final;
         }
       }
@@ -158,14 +158,14 @@ processMessages(NodeMemory * const nodeMemory)
       case Signal_SHUTDOWN:
         goto final;
       default:
-        DEBUG_MESSAGE("Unknown signal detected. (signal: %d)",
+        DEBUG_INFO("Unknown signal detected. (signal: %d)",
                       Message_getSignal(message));
         err = Err_SIGNAL_UNKNOWN;
         goto final;
       }
       break;
     default:
-      DEBUG_MESSAGE("Unknown message tag detected. (message tag: %d)",
+      DEBUG_INFO("Unknown message tag detected. (message tag: %d)",
                     message.tag);
       err = Err_MESSAGE_TAG;
       goto final;
@@ -189,14 +189,14 @@ main(int numOfArgs, char **args)
   if (numOfArgs == 2) {
     programFileName = args[1];
   } else {
-    DEBUG_MESSAGE("Usage: %s <program file>", args[0]);
+    USER_INFO("Usage: %s <program file>", args[0]);
     err = Err_COMMAND_ARGS;
     goto justExit;
   }
 
   err = comm_init();
   if (err) {
-    DEBUG_MESSAGE("Failed to initialize communication environment of "
+    DEBUG_INFO("Failed to initialize communication environment of "
                   "processors.");
     goto justExit;
   }
@@ -204,13 +204,13 @@ main(int numOfArgs, char **args)
   bool answer;
   err = comm_amIMaster(&answer);
   if (err) {
-    DEBUG_MESSAGE("Failed to check if I am the master processor.");
+    DEBUG_INFO("Failed to check if I am the master processor.");
     goto finalComm;
   }
   if (answer) {
     err = program_loadProgram(programFileName); // Signal_MEM_SIZE?
     if (err) {
-      DEBUG_MESSAGE("Failed to load a program to processors.");
+      DEBUG_INFO("Failed to load a program to processors.");
       goto finalComm;
     }
   }
@@ -218,13 +218,13 @@ main(int numOfArgs, char **args)
   NodeMemory nodeMemory = NodeMemory_DUMMY;
   err = NodeMemory_init(&nodeMemory);
   if (err) {
-    DEBUG_MESSAGE("Failed to initialize a node memory.");
+    DEBUG_INFO("Failed to initialize a node memory.");
     goto finalComm;
   }
 
   err = processMessages(&nodeMemory);
   if (err) {
-    DEBUG_MESSAGE("Failed to processs some messages.");
+    DEBUG_INFO("Failed to processs some messages.");
     goto finalNodeMemory;
   }
 
@@ -232,7 +232,7 @@ main(int numOfArgs, char **args)
 finalNodeMemory:
   errOnFinal = NodeMemory_final(&nodeMemory);
   if (errOnFinal) {
-    DEBUG_MESSAGE("Failed to finalize a node memory. (error code: %d)",
+    DEBUG_INFO("Failed to finalize a node memory. (error code: %d)",
                   errOnFinal);
     goto finalComm;
   }
@@ -241,22 +241,22 @@ finalComm:
   if (err) {
     errOnFinal = comm_sendMessage(Message_ofSignal(Signal_SHUTDOWN));
     if (errOnFinal) {
-      DEBUG_MESSAGE("Failed to send shutdown signal to processors. "
+      DEBUG_INFO("Failed to send shutdown signal to processors. "
                     "(error code: %d)", errOnFinal);
     }
   }
 
   errOnFinal = comm_final();
   if (errOnFinal) {
-    DEBUG_MESSAGE("Failed to finalize communication environment of "
+    DEBUG_INFO("Failed to finalize communication environment of "
                   "processors. (error code: %d)", errOnFinal);
     goto justExit;
   }
 
 justExit:
   if (err) {
-    DEBUG_MESSAGE("Failed to run Silky 9 because of the error of the code, "
-                  "%d.", err);
+    USER_INFO("Failed to run Silky 9 because of error of the code, "
+              "%d.", err);
     return EXIT_FAILURE;
   } else {
     return EXIT_SUCCESS;

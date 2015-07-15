@@ -17,15 +17,15 @@ MPI_Datatype MPI_Signal = MPI_DATATYPE_NULL;
 
 // functions
 
-#define MPI_DEBUG_MESSAGE(message, mpiFuncName, mpiErr) \
-    DEBUG_MESSAGE( \
+#define MPI_DEBUG_INFO(message, mpiFuncName, mpiErr) \
+    DEBUG_INFO( \
         "MPI: %s (MPI function: %s(), MPI error code: %d)", \
         (message), \
         (mpiFuncName), \
         (mpiErr))
 
-#define MPI_COMM_SIZE_DEBUG_MESSAGE(mpiErr) \
-    MPI_DEBUG_MESSAGE( \
+#define MPI_COMM_SIZE_DEBUG_INFO(mpiErr) \
+    MPI_DEBUG_INFO( \
         "Failed to get the number of processors.", \
         "MPI_Comm_size", \
         (mpiErr))
@@ -36,7 +36,7 @@ getNumOfProcs(Int * const numOfProcs)
   int size = int_DUMMY;
   int mpiErr = MPI_Comm_size(MPI_COMM_WORLD, &size);
   if (mpiErr) {
-    MPI_COMM_SIZE_DEBUG_MESSAGE(mpiErr);
+    MPI_COMM_SIZE_DEBUG_INFO(mpiErr);
     return Err_COMM_NUM_OF_PROCS;
   }
 
@@ -53,7 +53,7 @@ calcDestProcId(const NodeId globalNodeId, ProcId * const destProcId)
 
   Err err = getNumOfProcs(&numOfProcs);
   if (err) {
-    DEBUG_MESSAGE("Failed to get number of processors.");
+    DEBUG_INFO("Failed to get number of processors.");
     return err;
   }
 
@@ -70,7 +70,7 @@ comm_calcLocalNodeId(const NodeId globalNodeId, NodeId * const localNodeId)
 
   Err err = getNumOfProcs(&numOfProcs);
   if (err) {
-    DEBUG_MESSAGE("Failed to get number of processors.");
+    DEBUG_INFO("Failed to get number of processors.");
     return err;
   }
 
@@ -79,17 +79,17 @@ comm_calcLocalNodeId(const NodeId globalNodeId, NodeId * const localNodeId)
   return err;
 }
 
-#undef MPI_COMM_SIZE_DEBUG_MESSAGE
+#undef MPI_COMM_SIZE_DEBUG_INFO
 
 
-#define MPI_TYPE_DEFINE_DEBUG_MESSAGE(type, mpiFuncName, mpiErr) \
-    MPI_DEBUG_MESSAGE( \
+#define MPI_TYPE_DEFINE_DEBUG_INFO(type, mpiFuncName, mpiErr) \
+    MPI_DEBUG_INFO( \
         "Failed to define " type " type for MPI library.", \
         (mpiFuncName), \
         (mpiErr))
 
-#define MPI_TYPE_COMMIT_DEBUG_MESSAGE(type, mpiErr) \
-    MPI_DEBUG_MESSAGE( \
+#define MPI_TYPE_COMMIT_DEBUG_INFO(type, mpiErr) \
+    MPI_DEBUG_INFO( \
         "Failed to commit " type " type for MPI library.", \
         "MPI_Type_commit", \
         (mpiErr))
@@ -99,13 +99,13 @@ comm_init()
 {
   int mpiErr = MPI_Init(NULL, NULL);
   if (mpiErr) {
-    MPI_DEBUG_MESSAGE("Failed to initialize MPI library.", "MPI_Init", mpiErr);
+    MPI_DEBUG_INFO("Failed to initialize MPI library.", "MPI_Init", mpiErr);
     return Err_COMM_INIT;
   }
 
   mpiErr = MPI_Comm_set_errhandler(MPI_COMM_WORLD, MPI_ERRORS_RETURN);
   if (mpiErr) {
-    MPI_DEBUG_MESSAGE(
+    MPI_DEBUG_INFO(
         "Failed to set the error handler of MPI library.",
         "MPI_Comm_set_errhandler", mpiErr);
     return Err_COMM_INIT;
@@ -120,12 +120,12 @@ comm_init()
     // the same endianness according to Silky 9's design. So, the code above
     // should and must always work.
   if (mpiErr) {
-    MPI_TYPE_DEFINE_DEBUG_MESSAGE("Word", "MPI_Type_dup", mpiErr);
+    MPI_TYPE_DEFINE_DEBUG_INFO("Word", "MPI_Type_dup", mpiErr);
     return Err_COMM_INIT;
   }
   mpiErr = MPI_Type_commit(&MPI_Word);
   if (mpiErr) {
-    MPI_TYPE_COMMIT_DEBUG_MESSAGE("Word", mpiErr);
+    MPI_TYPE_COMMIT_DEBUG_INFO("Word", mpiErr);
     return Err_COMM_INIT;
   }
 
@@ -133,12 +133,12 @@ comm_init()
 
   mpiErr = MPI_Type_dup(MPI_UINT64_T, &MPI_Signal);
   if (mpiErr) {
-    MPI_TYPE_DEFINE_DEBUG_MESSAGE("Signal", "MPI_Type_dup", mpiErr);
+    MPI_TYPE_DEFINE_DEBUG_INFO("Signal", "MPI_Type_dup", mpiErr);
     return Err_COMM_INIT;
   }
   mpiErr = MPI_Type_commit(&MPI_Signal);
   if (mpiErr) {
-    MPI_TYPE_COMMIT_DEBUG_MESSAGE("Signal", mpiErr);
+    MPI_TYPE_COMMIT_DEBUG_INFO("Signal", mpiErr);
     return Err_COMM_INIT;
   }
 
@@ -147,12 +147,12 @@ comm_init()
   assert(2 * sizeof(Word) == sizeof(Token));
   mpiErr = MPI_Type_contiguous(2, MPI_Word, &MPI_Token);
   if (mpiErr) {
-    MPI_TYPE_DEFINE_DEBUG_MESSAGE("Token", "MPI_Type_contiguous", mpiErr);
+    MPI_TYPE_DEFINE_DEBUG_INFO("Token", "MPI_Type_contiguous", mpiErr);
     return Err_COMM_INIT;
   }
   mpiErr = MPI_Type_commit(&MPI_Token);
   if (mpiErr) {
-    MPI_TYPE_COMMIT_DEBUG_MESSAGE("Token", mpiErr);
+    MPI_TYPE_COMMIT_DEBUG_INFO("Token", mpiErr);
     return Err_COMM_INIT;
   }
 
@@ -161,12 +161,12 @@ comm_init()
   assert(4 * sizeof(Word) == sizeof(NodeUpdate));
   mpiErr = MPI_Type_contiguous(4, MPI_Word, &MPI_NodeUpdate);
   if (mpiErr) {
-    MPI_TYPE_DEFINE_DEBUG_MESSAGE("NodeUpdate", "MPI_Type_contiguous", mpiErr);
+    MPI_TYPE_DEFINE_DEBUG_INFO("NodeUpdate", "MPI_Type_contiguous", mpiErr);
     return Err_COMM_INIT;
   }
   mpiErr = MPI_Type_commit(&MPI_NodeUpdate);
   if (mpiErr) {
-    MPI_TYPE_COMMIT_DEBUG_MESSAGE("NodeUpdate", mpiErr);
+    MPI_TYPE_COMMIT_DEBUG_INFO("NodeUpdate", mpiErr);
     return Err_COMM_INIT;
   }
 
@@ -179,7 +179,7 @@ comm_final()
 {
   int mpiErr = MPI_Finalize();
   if (mpiErr) {
-    MPI_DEBUG_MESSAGE(
+    MPI_DEBUG_INFO(
         "Failed to finalize MPI library.",
         "MPI_Finalize", mpiErr);
     return Err_COMM_FINAL;
@@ -188,12 +188,12 @@ comm_final()
   return Err_OK;
 }
 
-#undef MPI_TYPE_DEFINE_DEBUG_MESSAGE
-#undef MPI_TYPE_COMMIT_DEBUG_MESSAGE
+#undef MPI_TYPE_DEFINE_DEBUG_INFO
+#undef MPI_TYPE_COMMIT_DEBUG_INFO
 
 
-#define MPI_SEND_DEBUG_MESSAGE(type, mpiErr) \
-    MPI_DEBUG_MESSAGE( \
+#define MPI_SEND_DEBUG_INFO(type, mpiErr) \
+    MPI_DEBUG_INFO( \
         "Failed to send " type " type value.", \
         "MPI_Send", \
         (mpiErr))
@@ -210,14 +210,14 @@ comm_sendMessage(const Message message)
       ProcId destProcId = ProcId_DUMMY;
       Err err = calcDestProcId(Message_getToken(message).dest, &destProcId);
       if (err) {
-        DEBUG_MESSAGE("Failed to calculate a destination processor ID from "
+        DEBUG_INFO("Failed to calculate a destination processor ID from "
                       "a token's destination node ID.");
         return Err_COMM_SEND;
       }
       mpiErr = MPI_Send(&message.token, 1, MPI_Token, destProcId,
                         MessageTag_TOKEN, MPI_COMM_WORLD);
       if (mpiErr) {
-        MPI_SEND_DEBUG_MESSAGE("Token", mpiErr);
+        MPI_SEND_DEBUG_INFO("Token", mpiErr);
         return Err_COMM_SEND;
       }
     }
@@ -228,14 +228,14 @@ comm_sendMessage(const Message message)
       Err err = calcDestProcId(Message_getNodeUpdate(message).nodeId,
                                &destProcId);
       if (err) {
-        DEBUG_MESSAGE("Failed to calculate a destination processor ID from "
+        DEBUG_INFO("Failed to calculate a destination processor ID from "
                       "a node's node ID.");
         return Err_COMM_SEND;
       }
       mpiErr = MPI_Send(&message.nodeUpdate, 1, MPI_NodeUpdate, destProcId,
                         MessageTag_NODE_UPDATE, MPI_COMM_WORLD);
       if (mpiErr) {
-        MPI_SEND_DEBUG_MESSAGE("NodeUpdate", mpiErr);
+        MPI_SEND_DEBUG_INFO("NodeUpdate", mpiErr);
         return Err_COMM_SEND;
       }
     }
@@ -245,7 +245,7 @@ comm_sendMessage(const Message message)
       Int numOfProcs = Int_DUMMY;
       Err err = getNumOfProcs(&numOfProcs);
       if (err) {
-        DEBUG_MESSAGE("Failed to get number of all processors.");
+        DEBUG_INFO("Failed to get number of all processors.");
         return Err_COMM_NUM_OF_PROCS;
       }
 
@@ -253,14 +253,14 @@ comm_sendMessage(const Message message)
         mpiErr = MPI_Send(&message.signal, 1, MPI_Signal, destProcId,
                           MessageTag_SIGNAL, MPI_COMM_WORLD);
         if (mpiErr) {
-          MPI_SEND_DEBUG_MESSAGE("Signal", mpiErr);
+          MPI_SEND_DEBUG_INFO("Signal", mpiErr);
           return Err_COMM_SEND;
         }
       }
     }
     break;
   default:
-    DEBUG_MESSAGE("Unknown message tag detected in a sent message. "
+    DEBUG_INFO("Unknown message tag detected in a sent message. "
                   "(message tag: %d)", message.tag);
     return Err_COMM_TAG;
   }
@@ -268,11 +268,11 @@ comm_sendMessage(const Message message)
   return Err_OK;
 }
 
-#undef MPI_SEND_DEBUG_MESSAGE
+#undef MPI_SEND_DEBUG_INFO
 
 
-#define MPI_RECV_DEBUG_MESSAGE(type, mpiErr) \
-    MPI_DEBUG_MESSAGE( \
+#define MPI_RECV_DEBUG_INFO(type, mpiErr) \
+    MPI_DEBUG_INFO( \
         "Failed to receive " type " type value.", \
         "MPI_Recv", \
         (mpiErr))
@@ -293,7 +293,7 @@ comm_receiveMessage(Message * const message)
 
   int mpiErr = MPI_Probe(MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
   if (mpiErr) {
-    MPI_DEBUG_MESSAGE("Failed to get status of the top message.",
+    MPI_DEBUG_INFO("Failed to get status of the top message.",
                       "MPI_Probe", mpiErr);
     return Err_COMM_RECEIVE;
   }
@@ -304,7 +304,7 @@ comm_receiveMessage(Message * const message)
       Token token = Token_DUMMY;
       mpiErr = wrapperOf_MPI_Recv(&token, MPI_Token, &status);
       if (mpiErr) {
-        MPI_RECV_DEBUG_MESSAGE("Token", mpiErr);
+        MPI_RECV_DEBUG_INFO("Token", mpiErr);
         return Err_COMM_RECEIVE;
       }
       *message = Message_ofToken(token);
@@ -315,7 +315,7 @@ comm_receiveMessage(Message * const message)
       NodeUpdate nodeUpdate = NodeUpdate_DUMMY;
       mpiErr = wrapperOf_MPI_Recv(&nodeUpdate, MPI_NodeUpdate, &status);
       if (mpiErr) {
-        MPI_RECV_DEBUG_MESSAGE("NodeUpdate", mpiErr);
+        MPI_RECV_DEBUG_INFO("NodeUpdate", mpiErr);
         return Err_COMM_RECEIVE;
       }
       *message = Message_ofNodeUpdate(nodeUpdate);
@@ -326,14 +326,14 @@ comm_receiveMessage(Message * const message)
       Int signal = Int_DUMMY;
       mpiErr = wrapperOf_MPI_Recv(&signal, MPI_Signal, &status);
       if (mpiErr) {
-        MPI_RECV_DEBUG_MESSAGE("Signal", mpiErr);
+        MPI_RECV_DEBUG_INFO("Signal", mpiErr);
         return Err_COMM_RECEIVE;
       }
       *message = Message_ofSignal(signal);
     }
     break;
   default:
-    DEBUG_MESSAGE("Unknown message tag detected in a received message. "
+    DEBUG_INFO("Unknown message tag detected in a received message. "
                   "(message tag: %d)", status.MPI_TAG);
     return Err_COMM_TAG;
   }
@@ -341,7 +341,7 @@ comm_receiveMessage(Message * const message)
   return Err_OK;
 }
 
-#undef MPI_RECV_DEBUG_MESSAGE
+#undef MPI_RECV_DEBUG_INFO
 
 
 Err
@@ -351,7 +351,7 @@ comm_amIMaster(bool *answer)
 
   int mpiErr = MPI_Comm_rank(MPI_COMM_WORLD, &myRank);
   if (mpiErr) {
-    MPI_DEBUG_MESSAGE("Failed to get the rank of the current process.",
+    MPI_DEBUG_INFO("Failed to get the rank of the current process.",
                       "MPI_Comm_rank", mpiErr);
     return Err_COMM_PROC_ID;
   }
@@ -361,4 +361,4 @@ comm_amIMaster(bool *answer)
   return Err_OK;
 }
 
-#undef MPI_DEBUG_MESSAGE
+#undef MPI_DEBUG_INFO

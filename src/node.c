@@ -51,7 +51,7 @@ NodeMemory_init(NodeMemory * const nodeMemory)
   nodeMemory->capacity = config_INITIAL_NODE_MEMORY_CAPACITY;
   nodeMemory->nodes = malloc(sizeof(Node) * nodeMemory->capacity);
   if (nodeMemory->nodes == NULL) {
-    DEBUG_MESSAGE("Failed to do malloc() for a node memory.");
+    DEBUG_INFO("Failed to do malloc() for a node memory.");
     return Err_MEMORY_ALLOC;
   }
 
@@ -77,7 +77,7 @@ NodeMemory_getNodeOfId(NodeMemory * const nodeMemory, const NodeId nodeId,
                        Node ** const node)
 {
   if (nodeId >= nodeMemory->capacity) {
-    DEBUG_MESSAGE("Node id is out of range of a node mermory.");
+    DEBUG_INFO("Node id is out of range of a node mermory.");
     return Err_MEMORY_OUT_OF_RANGE;
   }
 
@@ -109,7 +109,7 @@ NodeMemory_setNodeOfId(NodeMemory * const nodeMemory, const NodeId nodeId,
                        calcNewCapacity(nodeMemory->capacity)),
     };
     if (nodeMemory->nodes == NULL) {
-      DEBUG_MESSAGE("Failed to do realloc() for a node memory.");
+      DEBUG_INFO("Failed to do realloc() for a node memory.");
       return Err_MEMORY_ALLOC;
     }
 

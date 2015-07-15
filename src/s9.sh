@@ -3,9 +3,10 @@
 # constants
 
 DEBUG=false
-USAGE="Usage: $0 [-n <numOfProcs>] <programFile>"
+DEFAULT_NUM_OF_PROCS=1
 MPIRUN_LOG_FILE_PREFIX="silky9_log"
-SILKY9_BIN=main
+SILKY9_BIN=s9
+USAGE="Usage: $0 [-n <numOfProcs>] <programFile>"
 
 
 # functions
@@ -25,14 +26,16 @@ fail() {
 debug() {
   if $DEBUG
   then
-    err "DEBUG:" "$@"
+    err "s9.sh:DEBUG:" "$@"
   fi
 }
 
 
 # main routine
 
-numOfProcs=1
+numOfProcs=$DEFAULT_NUM_OF_PROCS
+
+## process command line arguments
 
 while getopts dn: option
 do
@@ -41,11 +44,11 @@ do
     DEBUG=true
     ;;
   n)
-    numOfProcs=$OPTARG
-    if ! [ "$numOfProcs" -gt 0 ]
+    if ! [ "$OPTARG" -gt 0 ]
     then
       fail "$USAGE"
     fi
+    numOfProcs=$OPTARG
     ;;
   \?)
     fail "$USAGE"
@@ -54,7 +57,19 @@ do
 done
 shift $(expr $OPTIND - 1)
 
+if [ $# -ne 1 ]
+then
+  fail "$USAGE"
+elif ! [ -f "$1" ]
+then
+  fail "no such file, $1"
+fi
+
+programFileName=$1
+
 debug "numOfProcs = $numOfProcs"
+
+## run silky 9
 
 if $DEBUG
 then
@@ -63,10 +78,9 @@ else
   mpirunFlags="-q"
 fi
 
-if [ $# -eq 1 ]
+if ! [ -f "$SILKY9_BIN" ]
 then
-  programFileName=$1
-  mpirun $mpirunFlags -n $numOfProcs $SILKY9_BIN $programFileName
-else
-  fail "$USAGE"
+  fail "could not find binary file of silky 9, $SILKY9_BIN"
 fi
+
+mpirun $mpirunFlags -n $numOfProcs $SILKY9_BIN $programFileName

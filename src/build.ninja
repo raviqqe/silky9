@@ -1,3 +1,5 @@
+program = s9
+
 cc = clang
 cflags = -g -Wall -Iinclude
 ldflags = -L/usr/lib/openmpi -lmpi
@@ -13,7 +15,7 @@ rule cc
   command = $cc -MMD -MF $out.d $cflags -c $in -o $out
 
 
-build main: ld comm.o inst.o main.o message.o node.o program.o type.o
+build $program: ld comm.o inst.o main.o message.o node.o program.o type.o
 build comm.o: cc comm.c
 build inst.o: cc inst.c
 build main.o: cc main.c

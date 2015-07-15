@@ -1,3 +1,4 @@
+cc = clang
 cflags = -g -Wall
 ldflags = -L/usr/lib/openmpi -lmpi
 #builddir = obj
@@ -9,7 +10,7 @@ rule ld
 rule cc
   deps = gcc
   depfile = $out.d
-  command = clang -MMD -MF $out.d $cflags -c $in -o $out
+  command = $cc -MMD -MF $out.d $cflags -c $in -o $out
 
 
 build main: ld comm.o inst.o main.o message.o node.o program.o type.o

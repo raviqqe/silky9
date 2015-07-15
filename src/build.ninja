@@ -1,5 +1,5 @@
 cc = clang
-cflags = -g -Wall
+cflags = -g -Wall -Iinclude
 ldflags = -L/usr/lib/openmpi -lmpi
 #builddir = obj
 

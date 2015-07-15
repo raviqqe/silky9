@@ -4,6 +4,8 @@
 
 DEBUG=false
 USAGE="Usage: $0 [-n <numOfProcs>] <programFile>"
+MPIRUN_LOG_FILE_PREFIX="silky9_log"
+SILKY9_BIN=main
 
 
 # functions
@@ -54,10 +56,17 @@ shift $(expr $OPTIND - 1)
 
 debug "numOfProcs = $numOfProcs"
 
+if $DEBUG
+then
+  mpirunFlags="-output-filename $MPIRUN_LOG_FILE_PREFIX"
+else
+  mpirunFlags="-q"
+fi
+
 if [ $# -eq 1 ]
 then
   programFileName=$1
-  mpirun -q -n $numOfProcs main $programFileName
+  mpirun $mpirunFlags -n $numOfProcs $SILKY9_BIN $programFileName
 else
   fail "$USAGE"
 fi

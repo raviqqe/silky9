@@ -75,13 +75,13 @@ executeInst(Node * const node, const Word operand)
       break;
     default:
       DEBUG_INFO("Unknown instruction detected. (instruction id: %x)",
-                    node->instId);
+                 node->instId);
       return Err_INST_UNKNOWN;
     }
 
     if (err) {
       DEBUG_INFO("Failed to execute an instruction of code, %d.",
-                    node->instId);
+                 node->instId);
       return Err_INST_EXEC;
     }
   }
@@ -93,6 +93,7 @@ executeInst(Node * const node, const Word operand)
 static Err
 processMessages(NodeMemory * const nodeMemory)
 {
+  DEBUG_INFO("Starting to process messages...");
   assert(nodeMemory != NULL);
 
   Err err = Err_OK;
@@ -107,6 +108,7 @@ processMessages(NodeMemory * const nodeMemory)
 
     switch (message.tag) {
     case MessageTag_TOKEN:
+      DEBUG_INFO("Message of MessageTag_TOKEN received.");
       {
         NodeId localNodeId = NodeId_DUMMY;
 
@@ -134,6 +136,7 @@ processMessages(NodeMemory * const nodeMemory)
       }
       break;
     case MessageTag_NODE_UPDATE:
+      DEBUG_INFO("Message of MessageTag_NODE_UPDATE received.");
       {
         NodeId localNodeId = NodeId_DUMMY;
 
@@ -154,6 +157,7 @@ processMessages(NodeMemory * const nodeMemory)
       }
       break;
     case MessageTag_SIGNAL:
+      DEBUG_INFO("Message of MessageTag_SIGNAL received.");
       switch (Message_getSignal(message)) {
       case Signal_SHUTDOWN:
         goto final;
@@ -201,6 +205,8 @@ main(int numOfArgs, char **args)
     goto justExit;
   }
 
+  DEBUG_INFO("A processor launched!");
+
   bool answer;
   err = comm_amIMaster(&answer);
   if (err) {
@@ -221,6 +227,7 @@ main(int numOfArgs, char **args)
     DEBUG_INFO("Failed to initialize a node memory.");
     goto finalComm;
   }
+  DEBUG_INFO("NodeMemory initialized!");
 
   err = processMessages(&nodeMemory);
   if (err) {
@@ -240,16 +247,17 @@ finalNodeMemory:
 finalComm:
   if (err) {
     errOnFinal = comm_sendMessage(Message_ofSignal(Signal_SHUTDOWN));
+    DEBUG_INFO("Shutdown signal sent to all processors.");
     if (errOnFinal) {
       DEBUG_INFO("Failed to send shutdown signal to processors. "
-                    "(error code: %d)", errOnFinal);
+                 "(error code: %d)", errOnFinal);
     }
   }
 
   errOnFinal = comm_final();
   if (errOnFinal) {
     DEBUG_INFO("Failed to finalize communication environment of "
-                  "processors. (error code: %d)", errOnFinal);
+               "processors. (error code: %d)", errOnFinal);
     goto justExit;
   }
 

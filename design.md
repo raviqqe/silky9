@@ -4,7 +4,7 @@
 
 ```
 computer = processor { processor }
-processor = token_queue program_memory instruction_executer
+processor = token_queue node_memory instruction_executer
 ```
 
 

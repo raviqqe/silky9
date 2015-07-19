@@ -45,18 +45,18 @@ logic    | bool and      |             3
 logic    | bool or       |             4
 logic    | bool xor      |             5
 int      | ==            |             0
-int      | +             |             1
-int      | \*            |             2
-int      | x&gt;c        |             3
-int      | x&lt;c        |             4
+int      | x&gt;c        |             1
+int      | x&lt;c        |             2
+int      | +             |             3
+int      | \*            |             4
 int      | c-x           |             5
 int      | x-c           |             6
-int      | x^c           |             7
-int      | c^x           |             8
-int      | log\_c(x)     |             9
-int      | log\_x(c)     |            10
-int      | c/x           |            11
-int      | x/c           |            12
+int      | c/x           |             7
+int      | x/c           |             8
+int      | x^c           |             9
+int      | c^x           |            10
+int      | log\_c(x)     |            11
+int      | log\_x(c)     |            12
 real     | (same as int) | (same as int)
 
 ### Instructions taking 2 variable operands

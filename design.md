@@ -21,47 +21,71 @@ processor = token_queue program_memory instruction_executer
 
 ## Instruction set
 
-name         | id prefix | id | operands | dests
--------------|----------:|---:|---------:|------:
-copy         |         0 |  0 |        1 |     2
-io           |         0 |  1 |        1 |     1
-bit not      |         1 |  0 |        1 |     1
-bit and      |         1 |  1 |        2 |     1
-bit or       |         1 |  2 |        2 |     1
-bit xor      |         1 |  3 |        2 |     1
-bool not     |         1 |  4 |        1 |     1
-bool and     |         1 |  5 |        2 |     1
-bool or      |         1 |  6 |        2 |     1
-bool xor     |         1 |  7 |        2 |     1
-int ==       |         2 |  0 |        2 |     1
-int <0       |         2 |  1 |        1 |     1
-int +        |         2 |  2 |        2 |     1
-int *        |         2 |  3 |        2 |     1
-int -x       |         2 |  4 |        1 |     1
-int 2^x      |         2 |  5 |        1 |     1
-int log2(x)  |         2 |  6 |        1 |     1
-real ==      |         3 |  0 |        2 |     1
-real <0      |         3 |  1 |        1 |     1
-real +       |         3 |  2 |        2 |     1
-real *       |         3 |  3 |        2 |     1
-real -x      |         3 |  4 |        1 |     1
-real 2^x     |         3 |  5 |        1 |     1
-real log2(x) |         3 |  6 |        1 |     1
-real 1/x     |         3 |  7 |        1 |     1
+### Instruction categories
 
+name    | id
+--------|---:
+control |  0
+logic   |  1
+int     |  2
+real    |  3
+
+### Instructions taking constant and variable operands
+
+category | name          |            id
+---------|---------------|--------------:
+control  | shutdown      |             0
+control  | copy          |             1
+control  | input         |             2
+control  | output        |             3
+logic    | bit and       |             0
+logic    | bit or        |             1
+logic    | bit xor       |             2
+logic    | bool and      |             3
+logic    | bool or       |             4
+logic    | bool xor      |             5
+int      | ==            |             0
+int      | +             |             1
+int      | \*            |             2
+int      | x&gt;c        |             3
+int      | x&lt;c        |             4
+int      | c-x           |             5
+int      | x-c           |             6
+int      | x^c           |             7
+int      | c^x           |             8
+int      | log\_c(x)     |             9
+int      | log\_x(c)     |            10
+int      | c/x           |            11
+int      | x/c           |            12
+real     | (same as int) | (same as int)
+
+### Instructions taking 2 variable operands
+
+category | name          |            id
+---------|---------------|--------------:
+logic    | bit and       |             0
+logic    | bit or        |             1
+logic    | bit xor       |             2
+logic    | bool and      |             3
+logic    | bool or       |             4
+logic    | bool xor      |             5
+int      | ==            |             0
+int      | +             |             1
+int      | \*            |             2
+real     | (same as int) | (same as int)
+
+* shutdown instruction doesn't take any constant operand
+* do the not operations by xor with 1
 * int's 1/x seems not to be defined
-* definition of virtual bool type
+* definition of bool type
   * false := 0b0..0
   * true /= false
-  * virtual bool type has same expression as int
-* io
-  * take an id of syscall and its arguments as a stream
-  * read command line arguments by io
-  * sync only by io and sync only for io
-  * shutdown by io?
+  * bool type has same expression as int type
+* input / output
+  * take a file descriptor as an constant operand
+  * read / write one byte reprensented in int type
 
 * bigger and smaller instuctions for int and real?
-* io's operandBuff = fd?
 
 
 ## Program

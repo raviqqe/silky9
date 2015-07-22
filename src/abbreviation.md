@@ -4,6 +4,7 @@
 * calc : calculation
 * comm : communication
 * config : configuration
+* const : constant
 * conv : convert
 * dest : destination
 * err : error
@@ -18,3 +19,5 @@
 * prev : previous
 * proc : processor
 * real : real number
+* subst : substitute
+* var : variable

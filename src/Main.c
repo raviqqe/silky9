@@ -14,83 +14,6 @@
 // functions
 
 static Err
-sendWord(const NodeId dest, const Word value)
-{
-  return comm_sendMessage(Message_ofToken(Token_of(dest, value)));
-}
-
-
-static Err
-sendInt(NodeId dest, Int intNum)
-{
-  return sendWord(dest, Word_ofInt(intNum));
-}
-
-
-//static Err
-//sendReal(NodeId dest, Real realNum)
-//{
-//  return sendWord(dest, Word_ofReal(realNum));
-//}
-
-
-static Err
-executeInst(Node * const node, const Word operand)
-{
-  Err err = Err_OK;
-
-  if (inst_getNumOfOperands(node->instId) == 2
-      && !node->operandPresentBit) {
-    Node_storeOperand(node, operand);
-  } else {
-    Word operandInNode;
-
-    switch (node->instId) {
-    case inst_COPY:
-      sendWord(node->subDest, operand);
-      sendWord(node->dest, operand);
-      break;
-    case inst_IO:
-      //sendInt(node->dest, io(operand.intNum));
-      break;
-    case inst_SHUTDOWN:
-      err = comm_sendMessage(Message_ofSignal(Signal_SHUTDOWN));
-      break;
-    case inst_BOOL_NOT:
-      err = sendInt(node->dest, !operand.intNum);
-      break;
-    case inst_BOOL_AND:
-      err = sendInt(node->dest,
-                    operand.intNum && Node_takeOutOperand(node).intNum);
-      break;
-    case inst_BOOL_OR:
-      err = sendInt(node->dest,
-                    operand.intNum || Node_takeOutOperand(node).intNum);
-      break;
-    case inst_BOOL_XOR:
-      operandInNode.intNum = Node_takeOutOperand(node).intNum;
-      err = sendInt(node->dest,
-                    !(operand.intNum && operandInNode.intNum)
-                    && !(operand.intNum || operandInNode.intNum));
-      break;
-    default:
-      DEBUG_INFO("Unknown instruction detected. (instruction id: %x)",
-                 node->instId);
-      return Err_INST_UNKNOWN;
-    }
-
-    if (err) {
-      DEBUG_INFO("Failed to execute an instruction of code, %d.",
-                 node->instId);
-      return Err_INST_EXEC;
-    }
-  }
-
-  return err;
-}
-
-
-static Err
 processMessages(NodeMemory * const nodeMemory)
 {
   DEBUG_INFO("Starting to process messages...");
@@ -128,7 +51,7 @@ processMessages(NodeMemory * const nodeMemory)
           goto final;
         }
 
-        err = executeInst(node, Message_getToken(message).value);
+        err = inst_executeInst(node, Message_getToken(message).value);
         if (err) {
           DEBUG_INFO("Failed to execute an instruction.");
           goto final;

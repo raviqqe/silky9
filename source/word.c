@@ -1,15 +1,15 @@
-#include "type.h"
+#include "word.h"
 
 
-Word
-Word_ofInt(const Int intNum)
+sq_word_t
+sq_word_of_int(const sq_int_t int_num)
 {
-  return (Word){.intNum = intNum};
+  return (sq_word_t){.int_ = int_num};
 }
 
 
-Word
-Word_ofReal(const Real realNum)
+sq_word_t
+sq_word_of_real(const sq_real_t real_num)
 {
-  return (Word){.realNum = realNum};
+  return (wq_word_t){.real_ = real_num};
 }

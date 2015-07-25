@@ -2,22 +2,23 @@
 #define NETWORK_H_
 
 
-#include "Error.h"
-#include "Log.h"
-#include "Message.h"
-#include "Node.h"
-#include "Type.h"
-#include "Word.h"
-
 #include <mpi.h>
 #include <stdbool.h>
 
+#include "error.h"
+#include "log.h"
+#include "message.h"
+#include "mpi_wrapper.h"
+#include "node.h"
+#include "type.h"
+#include "word.h"
 
-void Network_SendMessage(const Message message);
-Message Network_ReceiveMessage();
-NodeId Network_CalcLocalNodeId(const NodeId global_node_id);
-bool Network_AmIMasterProcessor();
-void Exit(const Error error);
+
+s9_error_t s9_initialize_network();
+s9_error_t s9_finalize_network();
+s9_error_t s9_send_message(const s9_message_t message);
+s9_error_t s9_receive_message(s9_message_t * const message);
+s9_node_id_t s9_calc_local_node_id(const s9_node_id_t global_node_id);
 
 
-#endif
+#endif // NETWORK_H_

@@ -1,32 +1,17 @@
-#ifndef _TYPE_H
-#define _TYPE_H
+#ifndef TYPE_H_
+#define TYPE_H_
 
 
 #include <stdint.h>
 
 
-typedef uint8_t Byte;
-typedef uint64_t Int;
-typedef double Real;
-
-typedef union {
-  Int intNum;
-  Real realNum;
-} Word;
-
-Word Word_ofInt(const Int intNum);
-Word Word_ofReal(const Real realNum);
+typedef uint8_t sq_byte_t;
+#define SQ_DUMMY_BYTE 0xEF
+typedef uint64_t sq_int_t;
+#define SQ_DUMMY_INT 0xDEADBEEF
+typedef double sq_real_t;
+#define SQ_DUMMY_REAL 42424242
+#define DUMMY_INT 0xDEADBEEF // dummy value for built-in int
 
 
-// dummy values
-
-#define Byte_DUMMY 0xEF
-#define Int_DUMMY 0xDEADBEEF
-#define Word_DUMMY (Word){.intNum = 0xDEADBEEF}
-#define Real_DUMMY (Word){.intNum = 0xDEADBEEF}.realNum
-
-
-#define int_DUMMY 0xDEADBEEF
-
-
-#endif
+#endif // TYPE_H_

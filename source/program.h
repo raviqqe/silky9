@@ -1,17 +1,17 @@
-#ifndef _PROGRAM_H
-#define _PROGRAM_H
+#ifndef PROGRAM_H_
+#define PROGRAM_H_
 
 
-#include "comm.h"
-#include "err.h"
-#include "message.h"
-#include "type.h"
 #include <string.h>
 
+#include "error.h"
+#include "message.h"
+#include "mpi_wrapper.h"
+#include "network.h"
+#include "type.h"
 
-#define program_STDIN NULL
 
-Err program_loadProgram(const char fileName[*]);
+s9_error_t s9_load_program(const char filename[*]);
 
 
-#endif
+#endif // PROGRAM_H_

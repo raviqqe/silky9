@@ -1,32 +1,31 @@
-#ifndef _LOG_H
-#define _LOG_H
+#ifndef LOG_H_
+#define LOG_H_
 
-
-#include "Config.h"
 
 #include <stdio.h>
 #include <stdarg.h>
 
+#include "config.h"
 
-#ifdef Config_DEBUG
-#define DEBUG_LOG(...) do { \
-      fprintf(stderr, "Silky9:%s:%d:%s(): ", __FILE__, __LINE__, __func__); \
-      Log(__VA_ARGS__); \
-    } while (0)
-#else
-#define LOG_DEBUG(...)
-#endif
+
+#define s9_log(log_level, ...) \
+  s9_log_(log_level, __FILE__, __LINE__, __func__, __VA_ARGS__)
 
 
 typedef enum {
-  LogType_FIRST_,
-  LogType_WARNING,
-  LogType_ERROR,
-  LogType_LAST_,
-} LogType;
+  S9_LOG_LEVEL_DEBUG,
+  S9_LOG_LEVEL_NOTICE,
+  S9_LOG_LEVEL_ERROR,
+  S9_LOG_LEVEL_WARNING,
+} s9_log_level_t;
 
 
-void Log(LogType log_type, const char * const kFormat, ...);
+// don't use this function directly
+s9_log_(const s9_log_level_t log_level,
+        const char * const filename,
+        const int line_num,
+        const char * const function,
+        ...);
 
 
-#endif
+#endif // LOG_H_

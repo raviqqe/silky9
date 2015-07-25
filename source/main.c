@@ -1,100 +1,101 @@
-#include "comm.h"
+#include <stdio.h>
+#include <stdlib.h>
+
 #include "debug.h"
-#include "err.h"
+#include "error.h"
+#include "instruction.h"
 #include "message.h"
+#include "network.h"
 #include "node.h"
 #include "type.h"
 #include "program.h"
-#include "inst.h"
-
-#include <stdio.h>
-#include <stdlib.h>
 
 
 // functions
 
-static Err
-processMessages(NodeMemory * const nodeMemory)
+static s9_error_t
+s9_process_messages_(s9_memory_t * const memory)
 {
-  DEBUG_INFO("Starting to process messages...");
-  assert(nodeMemory != NULL);
+  s9_log(S9_LOG_LEVEL_DEBUG, "starting to process messages...");
+  assert(memory != NULL);
 
-  Err err = Err_OK;
+  s9_error_t error = S9_ERROR_OK;
 
   while (true) {
-    Message message;
-    err = comm_receiveMessage(&message);
-    if (err) {
-      DEBUG_INFO("Failed to receive a message.");
+    s9_message_t message = S9_DUMMY_MESSAGE;
+    error = s9_receive_message(&message);
+    if (error) {
+      s9_log(S9_LOG_LEVEL_DEBUG, "failed to receive a message.");
       goto final;
     }
 
     switch (message.tag) {
-    case MessageTag_TOKEN:
-      DEBUG_INFO("Message of MessageTag_TOKEN received.");
+    case S9_MESSAGE_TAG_TOKEN:
+      s9_log(S9_LOG_LEVEL_DEBUG, "message of S9_MESSAGE_TAG_TOKEN received.");
       {
-        NodeId localNodeId = NodeId_DUMMY;
+        s9_node_id local_node_id = S9_DUMMY_NODE_ID;
 
-        err = comm_calcLocalNodeId(Message_getToken(message).dest,
-                                   &localNodeId);
-        if (err) {
-          DEBUG_INFO("Failed to calculate a local node ID from a global "
-                        "one of token's destination.");
+        error = s9_calc_local_node_id(s9_token_in_message(message).dest,
+                                      &local_node_id);
+        if (error) {
+          s9_log(S9_LOG_LEVEL_DEBUG,
+                 "Failed to calculate a local node ID from a global one of "
+                 "token's destination.");
           goto final;
         }
 
         Node *node = NULL;
-        err = NodeMemory_getNodeOfId(nodeMemory, localNodeId, &node);
-        if (err) {
-          DEBUG_INFO("Failed to get an address of node from a node "
+        error = s9_memory_t_getNodeOfId(memory, localNodeId, &node);
+        if (error) {
+          s9_log(S9_LOG_LEVEL_DEBUG, "Failed to get an address of node from a node "
                         "memory.");
           goto final;
         }
 
-        err = inst_executeInst(node, Message_getToken(message).value);
-        if (err) {
-          DEBUG_INFO("Failed to execute an instruction.");
+        error = inst_executeInst(node, Message_getToken(message).value);
+        if (error) {
+          s9_log(S9_LOG_LEVEL_DEBUG, "Failed to execute an instruction.");
           goto final;
         }
       }
       break;
-    case MessageTag_NODE_UPDATE:
-      DEBUG_INFO("Message of MessageTag_NODE_UPDATE received.");
+    case S9_MESSAGE_TAG_NODE_UPDATE:
+      s9_log(S9_LOG_LEVEL_DEBUG, "Message of S9_MESSAGE_TAG_NODE_UPDATE received.");
       {
         NodeId localNodeId = NodeId_DUMMY;
 
-        err = comm_calcLocalNodeId(Message_getNodeUpdate(message).nodeId,
+        error = comm_calcLocalNodeId(Message_getNodeUpdate(message).nodeId,
                                    &localNodeId);
-        if (err) {
-          DEBUG_INFO("Failed to calculate a local node ID from a global"
+        if (error) {
+          s9_log(S9_LOG_LEVEL_DEBUG, "Failed to calculate a local node ID from a global"
                         "one of node update.");
           goto final;
         }
 
-        err = NodeMemory_setNodeOfId(nodeMemory, localNodeId,
+        error = s9_memory_t_setNodeOfId(memory, localNodeId,
                                      Message_getNodeUpdate(message).node);
-        if (err) {
-          DEBUG_INFO("Failed to update a node in a node memory.");
+        if (error) {
+          s9_log(S9_LOG_LEVEL_DEBUG, "Failed to update a node in a node memory.");
           goto final;
         }
       }
       break;
-    case MessageTag_SIGNAL:
-      DEBUG_INFO("Message of MessageTag_SIGNAL received.");
+    case S9_MESSAGE_TAG_SIGNAL:
+      s9_log(S9_LOG_LEVEL_DEBUG, "Message of S9_MESSAGE_TAG_SIGNAL received.");
       switch (Message_getSignal(message)) {
       case Signal_SHUTDOWN:
         goto final;
       default:
-        DEBUG_INFO("Unknown signal detected. (signal: %d)",
+        s9_log(S9_LOG_LEVEL_DEBUG, "Unknown signal detected. (signal: %d)",
                       Message_getSignal(message));
-        err = Err_SIGNAL_UNKNOWN;
+        error = s9_error_t_SIGNAL_UNKNOWN;
         goto final;
       }
       break;
     default:
-      DEBUG_INFO("Unknown message tag detected. (message tag: %d)",
+      s9_log(S9_LOG_LEVEL_DEBUG, "Unknown message tag detected. (message tag: %d)",
                     message.tag);
-      err = Err_MESSAGE_TAG;
+      error = s9_error_t_MESSAGE_TAG;
       goto final;
     } // switch (message.tag)
   } // while (true)
@@ -108,86 +109,84 @@ final:
 // main routine
 
 int
-main(int numOfArgs, char **args)
+main(const int argc, const char * const * const argv)
 {
-  Err err = Err_OK;
+  s9_error_t error = S9_ERROR_OK;
 
-  char *programFileName = NULL;
-  if (numOfArgs == 2) {
-    programFileName = args[1];
+  char *program_filename = NULL;
+  if (argc == 2) {
+    program_filename = argv[1];
   } else {
-    USER_INFO("Usage: %s <program file>", args[0]);
-    err = Err_COMMAND_ARGS;
-    goto justExit;
+    s9_log(S9_LOG_LEVEL_NOTICE, "Usage: %s <program file>", argv[0]);
+    error = S9_ERROR_COMMAND_ARGS;
+    goto just_exit;
   }
 
-  err = comm_init();
-  if (err) {
-    DEBUG_INFO("Failed to initialize communication environment of "
+  error = s9_initialize_network();
+  if (error) {
+    s9_log(S9_LOG_LEVEL_DEBUG, "Failed to initialize communication environment of "
                   "processors.");
-    goto justExit;
+    goto just_exit;
   }
 
-  DEBUG_INFO("A processor launched!");
+  s9_log(S9_LOG_LEVEL_DEBUG, "A processor launched!");
 
-  bool answer;
-  err = comm_amIMaster(&answer);
-  if (err) {
-    DEBUG_INFO("Failed to check if I am the master processor.");
-    goto finalComm;
-  }
-  if (answer) {
-    err = program_loadProgram(programFileName); // Signal_MEM_SIZE?
-    if (err) {
-      DEBUG_INFO("Failed to load a program to processors.");
-      goto finalComm;
+  if (s9_is_master_processor()) {
+    error = s9_load_program(programFileName);
+    if (error) {
+      s9_log(S9_LOG_LEVEL_DEBUG, "Failed to load a program to processors.");
+      goto finalize_network;
     }
   }
 
-  NodeMemory nodeMemory = NodeMemory_DUMMY;
-  err = NodeMemory_init(&nodeMemory);
-  if (err) {
-    DEBUG_INFO("Failed to initialize a node memory.");
-    goto finalComm;
+  s9_memory_t memory = S9_DUMMY_MEMORY;
+  error = s9_initilalize_memory(&memory);
+  if (error) {
+    s9_log(S9_LOG_LEVEL_DEBUG, "Failed to initialize a node memory.");
+    goto finalize_network;
   }
-  DEBUG_INFO("NodeMemory initialized!");
+  s9_log(S9_LOG_LEVEL_DEBUG, "s9_memory_t initialized!");
 
-  err = processMessages(&nodeMemory);
-  if (err) {
-    DEBUG_INFO("Failed to processs some messages.");
-    goto finalNodeMemory;
-  }
-
-  Err errOnFinal = Err_OK;
-finalNodeMemory:
-  errOnFinal = NodeMemory_final(&nodeMemory);
-  if (errOnFinal) {
-    DEBUG_INFO("Failed to finalize a node memory. (error code: %d)",
-                  errOnFinal);
-    goto finalComm;
+  error = s9_process_messages_(&memory);
+  if (error) {
+    s9_log(S9_LOG_LEVEL_DEBUG, "Failed to processs some messages.");
+    goto finalize_memory;
   }
 
-finalComm:
-  if (err) {
-    errOnFinal = comm_sendMessage(Message_ofSignal(Signal_SHUTDOWN));
-    DEBUG_INFO("Shutdown signal sent to all processors.");
-    if (errOnFinal) {
-      DEBUG_INFO("Failed to send shutdown signal to processors. "
-                 "(error code: %d)", errOnFinal);
+  s9_error_t error_on_finalization = S9_ERROR_OK;
+finalize_memory:
+  error_on_finalization = s9_finalize_memory(&memory);
+  if (error_on_finalization) {
+    s9_log(S9_LOG_LEVEL_DEBUG,
+           "Failed to finalize a memory. "
+           "(error code: %d)", error_on_finalization);
+    goto finalize_network;
+  }
+
+finalize_network:
+  if (error) {
+    error_on_finalization = s9_send_message(
+        s9_message_of_signal(S9_SIGNAL_SHUTDOWN));
+    s9_log(S9_LOG_LEVEL_DEBUG, "Shutdown signal sent to all processors.");
+    if (error_on_finalization) {
+      s9_log(S9_LOG_LEVEL_DEBUG,
+             "Failed to send shutdown signal to processors. "
+             "(error code: %d)", error_on_finalization);
     }
   }
 
-  errOnFinal = comm_final();
-  if (errOnFinal) {
-    DEBUG_INFO("Failed to finalize communication environment of "
-               "processors. (error code: %d)", errOnFinal);
-    goto justExit;
+  error_on_finalizatoin = s9_finalize_network();
+  if (error_on_finalization) {
+    s9_log(S9_LOG_LEVEL_DEBUG,
+           "Failed to finalize communication environment of processors. "
+           "(error code: %d)", error_on_finalization);
+    goto just_exit;
   }
 
-justExit:
-  if (err) {
-    USER_INFO("Failed to run Silky 9 because of error of the code, "
-              "%d.", err);
+just_exit:
+  if (error) {
+    s9_log(S9_LOG_LEVEL_NOTICE,
+           "Failed to run Silky 9 because of error of the code, %d.", error);
     return EXIT_FAILURE;
   } else {
     return EXIT_SUCCESS;

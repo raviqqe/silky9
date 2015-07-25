@@ -1,260 +1,263 @@
 #include "program.h"
 
 
-#define FREAD_DEBUG_INFO(readSize) \
-    DEBUG_INFO("Failed to read enough size of data from program file. " \
-               "(size of read data is %dB)", (readSize))
+#define s9_fread_log(read_size) \
+    s9_log(S9_LOG_LEVEL_DEBUG, \
+           "Failed to read enough size of data from program file. " \
+           "(size of read data is %dB)", (read_size))
 
 
-static Err
-checkSymbol(FILE *programFile)
+static s9_error_t
+s9_check_symbol_(FILE *program_file)
 {
-  const char kSymbol[] = "JACK";
-  char symbolOfFile[sizeof(kSymbol)] = {'\0'};
+  const char jack_symbol[] = "JACK";
+  char symbol_in_file[sizeof(symbol)] = {'\0'};
 
-  size_t readSize = fread(symbolOfFile, 1, strlen(kSymbol), programFile);
-  if (readSize != strlen(kSymbol)) {
-    FREAD_DEBUG_INFO(readSize);
-    return Err_PROGRAM_FILE;
+  size_t read_size = fread(symbol_in_file, 1, strlen(symbol), program_file);
+  if (read_size != strlen(symbol)) {
+    s9_fread_log(read_size);
+    return S9_ERROR_PROGRAM_SIZE;
   }
 
-  int strncmpErr = strncmp(symbolOfFile, kSymbol, strlen(kSymbol));
-  if (strncmpErr) {
-    DEBUG_INFO("Program file's symbol, \"%s\" doesn't match with the correct "
+  int strncmps9_error_t = strncmp(symbolOfFile, kSymbol, strlen(kSymbol));
+  if (strncmps9_error_t) {
+    s9_log(S9_LOG_LEVEL_DEBUG, "Program file's symbol, \"%s\" doesn't match with the correct "
                "symbol, \"%s\".", symbolOfFile, kSymbol);
-    return Err_PROGRAM_SYMBOL;
+    return s9_error_t_PROGRAM_SYMBOL;
   }
 
-  return Err_OK;
+  return S9_ERROR_OK;
 }
 
 
-static Err
+static s9_error_t
 checkWordSize(FILE *programFile)
 {
   Byte sizeOfWord;
 
-  size_t readSize = fread(&sizeOfWord, 1, sizeof(sizeOfWord), programFile);
-  if (readSize != sizeof(sizeOfWord)) {
-    FREAD_DEBUG_INFO(readSize);
-    return Err_PROGRAM_FILE;
+  size_t read_size = fread(&sizeOfWord, 1, sizeof(sizeOfWord), programFile);
+  if (read_size != sizeof(sizeOfWord)) {
+    s9_fread_log(read_size);
+    return s9_error_t_PROGRAM_FILE;
   } else if (sizeOfWord != sizeof(Word)) {
-    DEBUG_INFO("Program file's word size doesn't match with virtual "
+    s9_log(S9_LOG_LEVEL_DEBUG, "Program file's word size doesn't match with virtual "
                "machine's. (machine: %d * 8 bits, file: %d * 8 bits)",
                sizeof(Word), sizeOfWord);
-    return Err_PROGRAM_WORDSIZE;
+    return s9_error_t_PROGRAM_WORDSIZE;
   }
 
-  return Err_OK;
+  return S9_ERROR_OK;
 }
 
 
-//static Err
+//static s9_error_t
 //readByte(FILE *programFile, Byte *byteMem)
 //{
-//  size_t readSize = fread(byteMem, 1, sizeof(*byteMem), programFile);
-//  if (readSize != sizeof(*byteMem)) {
-//    FREAD_DEBUG_INFO(readSize);
-//    return Err_PROGRAM_FILE;
+//  size_t read_size = fread(byteMem, 1, sizeof(*byteMem), programFile);
+//  if (read_size != sizeof(*byteMem)) {
+//    s9_fread_log(read_size);
+//    return s9_error_t_PROGRAM_FILE;
 //  }
 //
-//  return Err_OK;
+//  return S9_ERROR_OK;
 //}
 
 
-static Err
+static s9_error_t
 readInt(FILE *programFile, Int *intMem)
 {
-  size_t readSize = fread(intMem, 1, sizeof(*intMem), programFile);
-  if (readSize != sizeof(*intMem)) {
-    FREAD_DEBUG_INFO(readSize);
-    return Err_PROGRAM_FILE;
+  size_t read_size = fread(intMem, 1, sizeof(*intMem), programFile);
+  if (read_size != sizeof(*intMem)) {
+    s9_fread_log(read_size);
+    return s9_error_t_PROGRAM_FILE;
   }
 
-  return Err_OK;
+  return S9_ERROR_OK;
 }
 
-#undef FREAD_DEBUG_INFO
+#undef s9_fread_log
 
 
-static Err
+static s9_error_t
 readWord(FILE *programFile, Word *wordMem)
 {
   return readInt(programFile, (Int *)wordMem);
 }
 
 
-static Err
+static s9_error_t
 readNodeId(FILE *programFile, NodeId *nodeIdMem)
 {
   return readInt(programFile, (Int *)nodeIdMem);
 }
 
 
-static Err
+static s9_error_t
 readNode(FILE *programFile, Node *node)
 {
   *node = Node_DUMMY;
 
   Int header;
-  Err err = readInt(programFile, &header);
-  if (err) {
-    DEBUG_INFO(
+  s9_error_t error = readInt(programFile, &header);
+  if (error) {
+    s9_log(S9_LOG_LEVEL_DEBUG,
         "Failed to read the instruction field of a node from the program "
         "file.");
-    return err;
+    return error;
   }
 
   // If the read node's first word field is a operand buffer,
   // this process makes no sense.
   NodeId subDest;
-  err = readNodeId(programFile, &subDest);
-  if (err) {
-    DEBUG_INFO(
+  error = readNodeId(programFile, &subDest);
+  if (error) {
+    s9_log(S9_LOG_LEVEL_DEBUG,
         "Failed to read the sub-destination (or the operand buffer of a "
         "unknown value) of a node from the program file.");
-    return err;
+    return error;
   }
 
   NodeId dest;
-  err = readNodeId(programFile, &dest);
-  if (err) {
-    DEBUG_INFO(
+  error = readNodeId(programFile, &dest);
+  if (error) {
+    s9_log(S9_LOG_LEVEL_DEBUG,
         "Failed to read the destination of a node from the program file.");
-    return err;
+    return error;
   }
 
   *node = Node_of(header, Word_ofInt(subDest), dest);
 
-  return Err_OK;
+  return S9_ERROR_OK;
 }
 
 
-static Err
+static s9_error_t
 dispatchNodes(FILE *programFile)
 {
   Int numOfNodes = Int_DUMMY;
 
-  Err err = readInt(programFile, &numOfNodes);
-  if (err) {
-    DEBUG_INFO("Failed to read the number of nodes from the program file.");
-    return err;
+  s9_error_t error = readInt(programFile, &numOfNodes);
+  if (error) {
+    s9_log(S9_LOG_LEVEL_DEBUG, "Failed to read the number of nodes from the program file.");
+    return error;
   }
 
   for (Int nodeId = 0; nodeId < numOfNodes; nodeId++) {
     Node node;
-    err = readNode(programFile, &node);
-    if (err) {
-      DEBUG_INFO("Failed to read a node from the program file.");
-      return err;
+    error = readNode(programFile, &node);
+    if (error) {
+      s9_log(S9_LOG_LEVEL_DEBUG, "Failed to read a node from the program file.");
+      return error;
     }
 
-    err = comm_sendMessage(Message_ofNodeUpdate(NodeUpdate_of(nodeId, node)));
-    if (err) {
-      DEBUG_INFO("Failed to send a node while reading the program file.");
-      return err;
+    error = comm_sendMessage(Message_ofNodeUpdate(NodeUpdate_of(nodeId, node)));
+    if (error) {
+      s9_log(S9_LOG_LEVEL_DEBUG, "Failed to send a node while reading the program file.");
+      return error;
     }
   }
 
-  return Err_OK;
+  return S9_ERROR_OK;
 }
 
 
-static Err
+static s9_error_t
 sendInitialTokens(FILE *programFile)
 {
   Int numOfInitialTokens;
 
-  Err err = readInt(programFile, &numOfInitialTokens);
-  if (err) {
-    DEBUG_INFO(
+  s9_error_t error = readInt(programFile, &numOfInitialTokens);
+  if (error) {
+    s9_log(S9_LOG_LEVEL_DEBUG,
         "Failed to read number of initial tokens from program file.");
-    return err;
+    return error;
   }
 
   for (Int i = 0; i < numOfInitialTokens; i++) {
     NodeId dest;
-    err = readNodeId(programFile, &dest);
-    if (err) {
-      DEBUG_INFO(
+    error = readNodeId(programFile, &dest);
+    if (error) {
+      s9_log(S9_LOG_LEVEL_DEBUG,
           "Failed to read the destination of a initial token from the program "
           "file.");
-      return err;
+      return error;
     }
 
     Word value;
-    err = readWord(programFile, &value);
-    if (err) {
-      DEBUG_INFO(
-          "Failed to read the value of a initial token from the program "
-          "file.");
-      return err;
+    error = readWord(programFile, &value);
+    if (error) {
+      s9_log(S9_LOG_LEVEL_DEBUG,
+             "Failed to read the value of a initial token from the program "
+             "file.");
+      return error;
     }
 
-    err = comm_sendMessage(Message_ofToken(Token_of(dest, value)));
-    if (err) {
-      DEBUG_INFO("Failed to send a token while reading the program file.");
-      return err;
+    error = comm_sendMessage(Message_ofToken(Token_of(dest, value)));
+    if (error) {
+      s9_log(S9_LOG_LEVEL_DEBUG,
+             "Failed to send a token while reading the program file.");
+      return error;
     }
   }
 
-  return Err_OK;
+  return S9_ERROR_OK;
 }
 
 
-static Err
+static s9_error_t
 loadProgramFromFileStruct(FILE *programFile)
 {
-  Err err = checkSymbol(programFile);
-  if (err) {
-    DEBUG_INFO("Check of program file's symbol failed.");
-    return err;
+  s9_error_t error = checkSymbol(programFile);
+  if (error) {
+    s9_log(S9_LOG_LEVEL_DEBUG, "Check of program file's symbol failed.");
+    return error;
   }
 
-  err = checkWordSize(programFile);
-  if (err) {
-    DEBUG_INFO("Check of program file's word size failed.");
-    return err;
+  error = checkWordSize(programFile);
+  if (error) {
+    s9_log(S9_LOG_LEVEL_DEBUG, "Check of program file's word size failed.");
+    return error;
   }
 
   //
   // checkEndianess() is not implemented yet.
   //
 
-  err = dispatchNodes(programFile);
-  if (err) {
-    DEBUG_INFO("Failed to dispatch nodes of program to processors.");
-    return err;
+  error = dispatchNodes(programFile);
+  if (error) {
+    s9_log(S9_LOG_LEVEL_DEBUG,
+           "Failed to dispatch nodes of program to processors.");
+    return error;
   }
 
-  err = sendInitialTokens(programFile);
-  if (err) {
-    DEBUG_INFO("Failed to send the initial tokens of the program.");
-    return err;
+  error = sendInitialTokens(programFile);
+  if (error) {
+    s9_log(S9_LOG_LEVEL_DEBUG,
+           "Failed to send the initial tokens of the program.");
+    return error;
   }
 
-  return err;
+  return error;
 }
 
 
-Err
-program_loadProgram(const char programFileName[])
+s9_error_t
+s9_load_program(const char program_filename[])
 {
-  FILE *programFile = (programFileName == program_STDIN) ?
-      stdin : fopen(programFileName, "rb");
+  FILE *program_file = fopen(program_filename, "rb");
 
-  Err err = loadProgramFromFileStruct(programFile);
-  if (err && programFile == stdin) {
-    DEBUG_INFO("Failed to load the program from stdin.");
-  } else if (err) {
-    DEBUG_INFO(
-        "Failed to load the program from the program file, %s.",
+  s9_error_t error = loadProgramFromFileStruct(programFile);
+  if (error && programFile == stdin) {
+    s9_log(S9_LOG_LEVEL_DEBUG, "failed to load the program from stdin.");
+  } else if (error) {
+    s9_log(
+        "failed to load the program from the program file, %s.",
         programFileName);
   }
 
-  if (programFile != stdin) {
-    fclose(programFile);
+  if (program_filename != stdin) {
+    fclose(program_file);
   }
-  
-  return err;
+
+  return error;
 }

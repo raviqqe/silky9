@@ -2,67 +2,65 @@
 #define _NODE_H
 
 
-#include "config.h"
-#include "debug.h"
-#include "err.h"
-#include "inst.h"
-#include "type.h"
 #include <assert.h>
 #include <stdbool.h>
 #include <stdlib.h>
 
+#include "config.h"
+#include "log.h"
+#include "error.h"
+#include "instruction.h"
+#include "type.h"
 
-typedef Int NodeId; // this is not in design, but conforms to it.
+
+typedef sq_int_t sq_node_id_t; // this is not in design, but conforms to it.
+#define SQ_DUMMY_NODE_ID SQ_DUMMY_INT
 
 typedef struct {
   union {
-    Int header;
-        // used to write operandPresentBit and instId at once
-        // from program files
+    sq_byte_t header;
     struct {
-      bool operandPresentBit : sizeof(Byte);
-      const InstId instId : sizeof(Int) - sizeof(Byte);
+      bool operand_present_bit : 1;
+      const sq_instruction_id instruction_id : 8 * sizeof(header) - 1;
     };
   };
   union {
-    Word operandBuff;
-    const NodeId subDest;
+    sq_word_t stock_operand;
   };
-  const NodeId dest;
-} Node;
+  const sq_node_id_t dest;
+} sq_node_t;
 
-#define NodeId_DUMMY Int_DUMMY
-#define Node_DUMMY (Node){ \
-  .header = Int_DUMMY, \
-  .subDest = NodeId_DUMMY, \
-  .dest = NodeId_DUMMY, \
+#define SQ_DUMMY_NODE (sq_node_t){ \
+  .header = SQ_DUMMY_BYTE, \
+  .stock_operand = SQ_DUMMY_WORD, \
+  .dest = SQ_DUMMY_NODE_ID, \
 }
 
-Node Node_of(const Int header, const Word operandBuff, const NodeId dest);
 
-
-void Node_storeOperand(Node * const node, Word operand);
-Word Node_takeOutOperand(Node * const node);
-Word Node_copyOperand(const Node node);
+sq_node_t sq_node_of(const sq_byte_t header,
+                     const sq_word_t operand,
+                     const sq_node_id_t dest);
+void sq_store_operand_in_node(sq_node_t * const node, sq_word_t operand);
+sq_word_t sq_take_out_operand_from_node(sq_node_t * const node);
+sq_word_t sq_copy_operand(const sq_node_t node);
 
 
 typedef struct {
-  Int capacity;
-  Node *nodes;
-} NodeMemory;
+  sq_int_t capacity;
+  sq_node_t *nodes;
+} sq_memory_t;
 
-#define NodeMemory_DUMMY (NodeMemory){ \
-  .capacity = Int_DUMMY, \
+#define SQ_DUMMY_MEMORY (sq_memory_t){ \
+  .capacity = SQ_DUMMY_INT, \
   .nodes = NULL, \
 }
 
-Err NodeMemory_init(NodeMemory *nodeMemory);
-Err NodeMemory_final(NodeMemory *nodeMemory);
-Err NodeMemory_getNodeOfId(NodeMemory * const nodeMemory, const NodeId nodeId,
-                           Node ** const node);
-Err NodeMemory_setNodeOfId(NodeMemory * const nodeMemory, const NodeId nodeId,
-                           Node node);
-//NodeMemory NodeMemory_of(const Int capacity, const Node * const nodes);
+sq_error_t sq_initialize_memory(sq_memory_t * const memory);
+sq_error_t sq_finalize_memory(sq_memory_t *memory);
+sq_error_t sq_node_in_memory(sq_memory_t * const nodeMemory, const sq_node_tId nodeId,
+                           sq_node_t ** const node);
+sq_error_t sq_append_node_to_memory(sq_memory_t * const nodeMemory,
+                                    const sq_node_t node);
 
 
-#endif
+#endif // NODE_H_

@@ -6,7 +6,6 @@
 
 #include "error.h"
 #include "message.h"
-#include "mpi_wrapper.h"
 #include "network.h"
 #include "type.h"
 

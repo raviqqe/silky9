@@ -8,7 +8,6 @@
 #include "error.h"
 #include "log.h"
 #include "message.h"
-#include "mpi_wrapper.h"
 #include "node.h"
 #include "type.h"
 #include "word.h"

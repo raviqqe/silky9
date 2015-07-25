@@ -1,79 +1,75 @@
 #include "message.h"
 
 
-Token
-Token_of(const NodeId dest, const Word value)
+s9_token_t
+s9_token_of(const s9_node_id_t dest, const s9_word_t value)
 {
-  return (Token){
+  return (s9_token_t){
     .dest = dest,
     .value = value,
   };
 }
 
 
-NodeUpdate
-NodeUpdate_of(const NodeId nodeId, const Node node)
+s9_node_update_t
+s9_node_update_of(const s9_node_id_t node_id, const s9_node_t node)
 {
-  return (NodeUpdate){
-    .nodeId = nodeId,
+  return (s9_node_update_t){
+    .node_id = node_id,
     .node = node,
   };
 }
 
 
-Message
-Message_ofToken(const Token token)
+s9_message_t
+s9_message_of_token(const s9_token_t token)
 {
-  return (Message){
-        .tag = MessageTag_TOKEN,
-        .token = token,
-      };
+  return (s9_message_t){
+    .tag = S9_MESSAGE_TAG_TOKEN,
+    .token = token,
+  };
 }
 
 
-Message
-Message_ofNodeUpdate(const NodeUpdate nodeUpdate)
+s9_message_t
+s9_message_of_node_update(const s9_node_update_t node_update)
 {
-  return (Message){
-        .tag = MessageTag_NODE_UPDATE,
-        .nodeUpdate = nodeUpdate,
-      };
+  return (s9_message_t){
+    .tag = S9_MESSAGE_TAG_NODE_UPDATE,
+    .node_update_ = node_update,
+  };
 }
 
 
-Message
-Message_ofSignal(const Signal signal)
+s9_message_t
+s9_message_of_signal(const s9_signal_t signal)
 {
-  return (Message){
-        .tag = MessageTag_SIGNAL,
-        .signal = signal,
-      };
+  return (s9_message_t){
+    .tag = S9_MESSAGE_TAG_SIGNAL,
+    .signal_ = signal,
+  };
 }
 
 
-// These accessors of Message type are used by users who already know tags of
-// messages. So, they can return their values theirselves and just use assert()
-// to check programming errors.
-
-Token
-Message_getToken(const Message message)
+s9_token_t
+s9_token_in_message(const s9_message_t message)
 {
-  assert(message.tag == MessageTag_TOKEN);
-  return message.token;
+  assert(message.tag == S9_MESSAGE_TAG_TOKEN);
+  return message.token_;
 }
 
 
-NodeUpdate
-Message_getNodeUpdate(const Message message)
+s9_node_update_t
+s9_node_update_in_message(const s9_message_t message)
 {
-  assert(message.tag == MessageTag_NODE_UPDATE);
-  return message.nodeUpdate;
+  assert(message.tag == S9_MESSAGE_TAG_NODE_UPDATE);
+  return message.node_update_;
 }
 
 
-Signal
-Message_getSignal(const Message message)
+s9_signal_t
+s9_signal_in_message(const s9_message_t message)
 {
-  assert(message.tag == MessageTag_SIGNAL);
-  return message.signal;
+  assert(message.tag == S9_MESSAGE_TAG_SIGNAL);
+  return message.signal_;
 }

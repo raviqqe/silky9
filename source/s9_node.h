@@ -1,12 +1,12 @@
-#ifndef NODE_H_
-#define NODE_H_
+#ifndef S9_NODE_H_
+#define S9_NODE_H_
 
 
 #include <assert.h>
 #include <stdbool.h>
 
-#include "opcode.h"
-#include "type.h"
+#include "s9_opcode.h"
+#include "s9_type.h"
 
 
 typedef s9_int_t s9_node_id_t; // conforming to design
@@ -42,4 +42,4 @@ s9_word_t s9_take_out_operand_from_node(s9_node_t * const node);
 s9_word_t s9_copy_operand_in_node(const s9_node_t node);
 
 
-#endif // NODE_H_
+#endif // S9_NODE_H_

@@ -1,4 +1,4 @@
-#include "node.h"
+#include "s9_node.h"
 
 
 s9_node_t
@@ -17,6 +17,7 @@ s9_node_of(const s9_int_t header,
 void
 s9_store_operand_in_node(s9_node_t * const node, const s9_word_t operand)
 {
+  assert(node != NULL);
   assert(node->operand_present_bit_ == false);
 
   *node = (s9_node_t){
@@ -29,6 +30,7 @@ s9_store_operand_in_node(s9_node_t * const node, const s9_word_t operand)
 s9_word_t
 s9_take_out_operand_from_node(s9_node_t * const node)
 {
+  assert(node != NULL);
   assert(node->operand_present_bit_ == true);
 
   s9_word_t returned_operand = node->operand_;

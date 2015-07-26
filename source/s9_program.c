@@ -31,19 +31,19 @@ s9_check_symbol_(FILE *program_file)
 
 
 static s9_error_t
-checkWordSize(FILE *programFile)
+checks9_word_tSize(FILE *programFile)
 {
-  Byte sizeOfWord;
+  Byte sizeOfs9_word_t;
 
-  size_t read_size = fread(&sizeOfWord, 1, sizeof(sizeOfWord), programFile);
-  if (read_size != sizeof(sizeOfWord)) {
+  size_t read_size = fread(&sizeOfs9_word_t, 1, sizeof(sizeOfs9_word_t), programFile);
+  if (read_size != sizeof(sizeOfs9_word_t)) {
     s9_fread_log(read_size);
     return s9_error_t_PROGRAM_FILE;
-  } else if (sizeOfWord != sizeof(Word)) {
+  } else if (sizeOfs9_word_t != sizeof(s9_word_t)) {
     s9_log(S9_LOG_LEVEL_DEBUG, "Program file's word size doesn't match with virtual "
                "machine's. (machine: %d * 8 bits, file: %d * 8 bits)",
-               sizeof(Word), sizeOfWord);
-    return s9_error_t_PROGRAM_WORDSIZE;
+               sizeof(s9_word_t), sizeOfs9_word_t);
+    return S9_ERROR_PROGRAM_WORDSIZE;
   }
 
   return S9_ERROR_OK;
@@ -79,7 +79,7 @@ readInt(FILE *programFile, Int *intMem)
 
 
 static s9_error_t
-readWord(FILE *programFile, Word *wordMem)
+reads9_word_t(FILE *programFile, s9_word_t *wordMem)
 {
   return readInt(programFile, (Int *)wordMem);
 }
@@ -125,7 +125,7 @@ readNode(FILE *programFile, Node *node)
     return error;
   }
 
-  *node = Node_of(header, Word_ofInt(subDest), dest);
+  *node = Node_of(header, s9_word_t_ofInt(subDest), dest);
 
   return S9_ERROR_OK;
 }
@@ -183,8 +183,8 @@ sendInitialTokens(FILE *programFile)
       return error;
     }
 
-    Word value;
-    error = readWord(programFile, &value);
+    s9_word_t value;
+    error = reads9_word_t(programFile, &value);
     if (error) {
       s9_log(S9_LOG_LEVEL_DEBUG,
              "Failed to read the value of a initial token from the program "
@@ -200,7 +200,7 @@ sendInitialTokens(FILE *programFile)
     }
   }
 
-  return S9_ERROR_OK;
+  return S9_OK;
 }
 
 
@@ -213,7 +213,7 @@ loadProgramFromFileStruct(FILE *programFile)
     return error;
   }
 
-  error = checkWordSize(programFile);
+  error = checks9_word_tSize(programFile);
   if (error) {
     s9_log(S9_LOG_LEVEL_DEBUG, "Check of program file's word size failed.");
     return error;
@@ -250,9 +250,8 @@ s9_load_program(const char program_filename[])
   if (error && programFile == stdin) {
     s9_log(S9_LOG_LEVEL_DEBUG, "failed to load the program from stdin.");
   } else if (error) {
-    s9_log(
-        "failed to load the program from the program file, %s.",
-        programFileName);
+    s9_log("failed to load the program from the program file, %s.",
+           programFileName);
   }
 
   if (program_filename != stdin) {

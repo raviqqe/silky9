@@ -3,172 +3,204 @@
 
 // macros
 
-#define s9_mpi_log(mpi_function, mpi_err) \
+#define s9_mpi_log(mpi_function, mpi_error) \
   s9_log(S9_LOG_LEVEL_DEBUG, \
          "MPI function, %s() failed. (MPI error code: %d)", \
-         (mpi_function), (mpi_err))
+         (mpi_function), (mpi_error))
 
 
 // types
 
 typedef s9_int_t s9_processor_id_t;
 #define S9_DUMMY_PROCESSOR_ID S9_DUMMY_INT
-    // this is not in design, but compatible with it.
+    // this is not in design, but conforms to it.
 
+typedef struct {
+  s9_processor_id_t processor_id;
+  s9_int_t num_of_processors;
+  MPI_Datatype datatypes[3];
+} s9_network_t;
+#define S9_DUMMY_NETWORK \
+  (s9_network_t){ \
+    .processor_id = S9_DUMMY_PROCESSOR_ID, \
+    .num_of_processors = S9_DUMMY_INT, \
+    .datatypes = (MPI_Datatype[3]){ \
+      MPI_DATATYPE_NULL, \
+      MPI_DATATYPE_NULL, \
+      MPI_DATATYPE_NULL, \
+    } \
+   }
 
 // global variables
 
 MPI_Datatype s9_mpi_word = MPI_DATATYPE_NULL;
-MPI_Datatype s9_mpi_node_update = MPI_DATATYPE_NULL;
 MPI_Datatype s9_mpi_token = MPI_DATATYPE_NULL;
 MPI_Datatype s9_mpi_signal = MPI_DATATYPE_NULL;
 
 
 // functions
 
-static s9_int_t
-GetNumOfProcessors()
+s9_error_t
+s9_get_num_of_processors(s9_int_t * const num_of_processors)
 {
+  assert(s9_network_is_initialized());
 
-  int size = int_DUMMY;
+  int size = DUMMY_INT;
   int mpi_error = MPI_Comm_size(MPI_COMM_WORLD, &size);
   if (mpi_error) {
     s9_mpi_log("MPI_Comm_size", mpi_error);
-    s9_log(S9_LOG_LEVEL_s9_error_t, "Failed to get number of processors.");
-    Exit(s9_error_t_NETWORK_NUM_OF_PROCESSORS);
+    *num_of_processors = S9_DUMMY_INT;
+    return S9_ERROR_NETWORK_NUM_OF_PROCESSORS;
   }
 
-  return size;
+  *num_of_processors = size;
+
+  return S9_OK;
 }
 
 
-static ProcessorID
-CalcDestProcessorID(const s9_node_id_t global_node_id)
+static s9_error_t
+s9_calc_dest_processor_id(const s9_node_id_t global_node_id,
+                          s9_processor_id_t * const dest_processor_id)
 {
-  EnsureInitialized();
-  return global_node_id % GetNumOfProcessors();
-}
+  assert(s9_network_is_initialized());
 
+  s9_int_t num_of_processors = S9_DUMMY_INT;
+  s9_error_t error = s9_get_num_of_processors(&num_of_processors);
+  if (error) {
+    s9_log(S9_LOG_LEVEL_ERROR, "failed to get number of processors.");
+    *dest_processor_id = S9_DUMMY_PROCESSOR_ID;
+    return error;
+  }
 
-s9_node_id_t
-Comm_CalcLocals9_node_id_t(const s9_node_id_t global_node_id)
-{
-  EnsureInitialized();
-  return global_node_id / GetNumOfProcessors;
+  *dest_processor_id = global_node_id % num_of_processors;
+
+  return S9_OK;
 }
 
 
 s9_error_t
-Comm_init()
+s9_calc_local_node_id(const s9_node_id_t global_node_id,
+                      s9_node_id_t * const local_node_id)
 {
-  int mpi_error = MPI_Init(NULL, NULL);
-  if (mpi_error) {
-    s9_mpi_log("Failed to initialize MPI library.", "MPI_Init", mpi_error);
-    return s9_error_t_NETWORK_INIT;
+  assert(s9_network_is_initialized());
+
+  s9_int_t num_of_processors = S9_DUMMY_INT;
+  s9_error_t error = s9_get_num_of_processors(&num_of_processors);
+  if (error) {
+    s9_log(S9_LOG_LEVEL_ERROR, "failed to get number of processors.");
+    *local_node_id = S9_DUMMY_NODE_ID;
+    return error;
   }
 
+  *local_node_id = global_node_id / num_of_processors;
+
+  return S9_OK;
+}
+
+
+s9_error_t
+s9_initialize_network()
+{
+  assert(!s9_network_is_initialized());
+
+  int mpi_error = MPI_Init(NULL, NULL);
+  if (mpi_error) {
+    s9_mpi_log("MPI_Init", mpi_error);
+    return S9_ERROR_NETWORK_INITIALIZE;
+  }
+
+#ifndef S9_CONFIG_MPI_ERRORS_ARE_FATAL
   mpi_error = MPI_Comm_set_errhandler(MPI_COMM_WORLD, MPI_ERRORS_RETURN);
   if (mpi_error) {
-    s9_mpi_log(
-        "Failed to set the error handler of MPI library.",
-        "MPI_Comm_set_errhandler", mpi_error);
-    return s9_error_t_NETWORK_INIT;
+    s9_mpi_log("MPI_Comm_set_errhandler", mpi_error);
+    return S9_ERROR_NETWORK_INITIALIZE;
   }
+#endif
 
   // type declarations
 
   //// word type
 
-  mpi_error = MPI_Type_dup(MPI_UINT64_T, &MPI_Word);
+  mpi_error = MPI_Type_dup(MPI_UINT64_T, &s9_mpi_word);
     // The s9_int_t and s9_real_t type (i.e. any types Word type can express)
     // must have the same endianness according to silky 9's design.
     // So, the code above should and must always work.
   if (mpi_error) {
-    MPI_TYPE_DEFINE_DEBUG_INFO("Word", "MPI_Type_dup", mpi_error);
-    return s9_error_t_NETWORK_INIT;
+    s9_mpi_log("MPI_Type_dup", mpi_error);
+    return S9_ERROR_NETWORK_INITIALIZE;
   }
-  mpi_error = MPI_Type_Commit(&MPI_Word);
+  mpi_error = MPI_Type_commit(&s9_mpi_word);
   if (mpi_error) {
-    MPI_TYPE_COMMIT_DEBUG_INFO("Word", mpi_error);
-    return s9_error_t_NETWORK_INIT;
+    s9_mpi_log("MPI_Type_commit", mpi_error);
+    return S9_ERROR_NETWORK_INITIALIZE;
   }
 
-  //// Signal
+  //// signal
 
   mpi_error = MPI_Type_dup(MPI_UINT64_T, &MPI_Signal);
   if (mpi_error) {
-    MPI_TYPE_DEFINE_DEBUG_INFO("Signal", "MPI_Type_dup", mpi_error);
-    return s9_error_t_NETWORK_INIT;
+    s9_mpi_log("MPI_Type_dup", mpi_error);
+    return S9_ERROR_NETWORK_INITIALIZE;
   }
   mpi_error = MPI_Type_commit(&MPI_Signal);
   if (mpi_error) {
-    MPI_TYPE_COMMIT_DEBUG_INFO("Signal", mpi_error);
-    return s9_error_t_NETWORK_INIT;
+    s9_mpi_log("MPI_Type_commit", mpi_error);
+    return S9_ERROR_NETWORK_INITIALIZE;
   }
 
-  //// Token
+  //// token
 
   assert(2 * sizeof(Word) == sizeof(Token));
   mpi_error = MPI_Type_contiguous(2, MPI_Word, &MPI_Token);
   if (mpi_error) {
-    MPI_TYPE_DEFINE_DEBUG_INFO("Token", "MPI_Type_contiguous", mpi_error);
-    return s9_error_t_NETWORK_INIT;
+    s9_mpi_log("MPI_Type_contiguous", mpi_error);
+    return S9_ERROR_NETWORK_INITIALIZE;
   }
   mpi_error = MPI_Type_commit(&MPI_Token);
   if (mpi_error) {
-    MPI_TYPE_COMMIT_DEBUG_INFO("Token", mpi_error);
-    return s9_error_t_NETWORK_INIT;
+    s9_mpi_log("MPI_Type_commit", mpi_error);
+    return S9_ERROR_NETWORK_INITIALIZE;
   }
 
-  //// s9_node_update_t
-
-  assert(4 * sizeof(Word) == sizeof(s9_node_update_t));
-  mpi_error = MPI_Type_contiguous(4, MPI_Word, &MPI_s9_node_update_t);
-  if (mpi_error) {
-    MPI_TYPE_DEFINE_DEBUG_INFO("s9_node_update_t", "MPI_Type_contiguous", mpi_error);
-    return s9_error_t_NETWORK_INIT;
-  }
-  mpi_error = MPI_Type_commit(&MPI_s9_node_update_t);
-  if (mpi_error) {
-    MPI_TYPE_COMMIT_DEBUG_INFO("s9_node_update_t", mpi_error);
-    return s9_error_t_NETWORK_INIT;
-  }
-
-  return s9_error_t_OK;
+  return S9_OK;
 }
-
-  return s9_error_t_OK;
-}
-
-#undef MPI_TYPE_DEFINE_DEBUG_INFO
-#undef MPI_TYPE_COMMIT_DEBUG_INFO
-
-
-#define MPI_SEND_DEBUG_INFO(type, mpi_error) \
-    s9_mpi_log( \
-        "Failed to send " type " type value.", \
-        "MPI_Send", \
-        (mpi_error))
 
 
 s9_error_t
-Comm_sends9_message_t(const s9_message_t message)
+s9_finalize_network()
 {
-  EnsureInitialized();
+  assert(s9_network_is_initialized());
+
+  int mpi_error = MPI_Finalize();
+  if (mpi_error) {
+    s9_mpi_log("MPI_Finalize", mpi_error);
+    s9_log(S9_LOG_LEVEL_ERROR, "failed to finalize the processor network.");
+    return S9_ERROR_NETWORK_FINALIZE;
+  }
+
+  return S9_OK;
+}
+
+
+s9_error_t
+s9_send_message(const s9_message_t message)
+{
+  assert(s9_network_is_initialized());
 
   int mpi_error = MPI_SUCCESS;
 
   switch (message.tag) {
   case s9_message_tTaTOKEN:
     {
-      ProcessorID destProcessorID = ProcessorID_DUMMY;
-      s9_error_t err = calcDestProcessorID(s9_message_t_getToken(message).dest, &destProcessorID);
+      s9_processor_id_t dests9_processor_id_t = s9_processor_id_t_DUMMY;
+      s9_error_t err = calcDests9_processor_id(s9_message_t_getToken(message).dest, &dest_processor_id);
       if (err) {
         DEBUG_INFO("Failed to calculate a destination processor ID from "
                       "a token's destination node ID.");
         return s9_error_t_NETWORK_SEND;
       }
-      mpi_error = MPI_Send(&message.token, 1, MPI_Token, destProcessorID,
+      mpi_error = MPI_Send(&message.token, 1, MPI_Token, dests9_processor_id_t,
                         s9_message_tTag_TOKEN, MPI_COMM_WORLD);
       if (mpi_error) {
         MPI_SEND_DEBUG_INFO("Token", mpi_error);
@@ -178,9 +210,9 @@ Comm_sends9_message_t(const s9_message_t message)
     break;
   case s9_message_tTag_NODE_UPDATE:
     {
-      ProcessorID destProcessorID = ProcessorID_DUMMY;
-      s9_error_t error = s9_calcDestProcessorID(s9_message_t_gets9_node_update_t(message).nodeID,
-                               &destProcessorID);
+      s9_processor_id_t dests9_processor_id_t = s9_processor_id_t_DUMMY;
+      s9_error_t error = s9_calcDests9_processor_id_t(s9_message_t_gets9_node_update_t(message).nodeID,
+                               &dests9_processor_id_t);
       if (err) {
         DEBUG_INFO("Failed to calculate a destination processor ID from "
                       "a node's node ID.");
@@ -195,7 +227,7 @@ Comm_sends9_message_t(const s9_message_t message)
       }
     }
     break;
-  case s9_message_tTag_SIGNAL:
+  case S9_MESSAGE_TAG_SIGNAL:
     {
       s9_int_t numOfProcs = s9_int_t_DUMMY;
       s9_error_t err = getNumOfProcs(&numOfProcs);
@@ -204,8 +236,8 @@ Comm_sends9_message_t(const s9_message_t message)
         return s9_error_t_NETWORK_NUM_OF_PROCS;
       }
 
-      for (s9_int_t destProcessorID = 0; destProcessorID < numOfProcs; destProcessorID++) {
-        mpi_error = MPI_Send(&message.signal, 1, MPI_Signal, destProcessorID,
+      for (s9_int_t dest_processor_id_t = 0; dests9_processor_id_t < numOfProcs; dests9_processor_id_t++) {
+        mpi_error = MPI_Send(&message.signal, 1, MPI_Signal, dests9_processor_id_t,
                           s9_message_tTag_SIGNAL, MPI_COMM_WORLD);
         if (mpi_error) {
           MPI_SEND_DEBUG_INFO("Signal", mpi_error);
@@ -287,22 +319,6 @@ s9_receive_message(s9_message_t * const message)
            "unknown message tag detected in a received message. "
            "(message tag: %d)", status.MPI_TAG);
     return S9_ERROR_MESSAGE_UNKNOWN_TAG;
-  }
-
-  return S9_OK;
-}
-
-
-s9_error_t
-s9_finalize_network()
-{
-  assert(s9_network_is_initialized());
-
-  int mpi_error = MPI_Finalize();
-  if (mpi_error) {
-    s9_mpi_log("MPI_Finalize", mpi_error);
-    s9_log(S9_LOG_LEVEL_ERROR, "failed to finalize the processor network.");
-    return S9_ERROR_NETWORK_FINALIZE;
   }
 
   return S9_OK;

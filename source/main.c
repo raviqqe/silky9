@@ -14,12 +14,12 @@
 // functions
 
 static s9_error_t
-s9_process_messages_(s9_memory_t * const memory)
+s9_process_messages(s9_memory_t * const memory)
 {
   s9_log(S9_LOG_LEVEL_DEBUG, "starting to process messages...");
   assert(memory != NULL);
 
-  s9_error_t error = S9_ERROR_OK;
+  s9_error_t error = S9_OK;
 
   while (true) {
     s9_message_t message = S9_DUMMY_MESSAGE;
@@ -44,8 +44,8 @@ s9_process_messages_(s9_memory_t * const memory)
           goto final;
         }
 
-        Node *node = NULL;
-        error = s9_memory_t_getNodeOfId(memory, localNodeId, &node);
+        s9_node_t *node = NULL;
+        error = s9_memory_t_gets9_node_tOfId(memory, locals9_node_tId, &node);
         if (error) {
           s9_log(S9_LOG_LEVEL_DEBUG, "Failed to get an address of node from a node "
                         "memory.");
@@ -62,18 +62,18 @@ s9_process_messages_(s9_memory_t * const memory)
     case S9_MESSAGE_TAG_NODE_UPDATE:
       s9_log(S9_LOG_LEVEL_DEBUG, "Message of S9_MESSAGE_TAG_NODE_UPDATE received.");
       {
-        NodeId localNodeId = NodeId_DUMMY;
+        s9_node_tId locals9_node_tId = s9_node_tId_DUMMY;
 
-        error = comm_calcLocalNodeId(Message_getNodeUpdate(message).nodeId,
-                                   &localNodeId);
+        error = comm_calcLocals9_node_tId(Message_gets9_node_tUpdate(message).nodeId,
+                                   &locals9_node_tId);
         if (error) {
           s9_log(S9_LOG_LEVEL_DEBUG, "Failed to calculate a local node ID from a global"
                         "one of node update.");
           goto final;
         }
 
-        error = s9_memory_t_setNodeOfId(memory, localNodeId,
-                                     Message_getNodeUpdate(message).node);
+        error = s9_memory_t_sets9_node_tOfId(memory, locals9_node_tId,
+                                     Message_gets9_node_tUpdate(message).node);
         if (error) {
           s9_log(S9_LOG_LEVEL_DEBUG, "Failed to update a node in a node memory.");
           goto final;
@@ -111,7 +111,7 @@ final:
 int
 main(const int argc, const char * const * const argv)
 {
-  s9_error_t error = S9_ERROR_OK;
+  s9_error_t error = S9_OK;
 
   char *program_filename = NULL;
   if (argc == 2) {
@@ -147,13 +147,13 @@ main(const int argc, const char * const * const argv)
   }
   s9_log(S9_LOG_LEVEL_DEBUG, "s9_memory_t initialized!");
 
-  error = s9_process_messages_(&memory);
+  error = s9_process_messages(&memory);
   if (error) {
     s9_log(S9_LOG_LEVEL_DEBUG, "Failed to processs some messages.");
     goto finalize_memory;
   }
 
-  s9_error_t error_on_finalization = S9_ERROR_OK;
+  s9_error_t error_on_finalization = S9_OK;
 finalize_memory:
   error_on_finalization = s9_finalize_memory(&memory);
   if (error_on_finalization) {
@@ -167,18 +167,19 @@ finalize_network:
   if (error) {
     error_on_finalization = s9_send_message(
         s9_message_of_signal(S9_SIGNAL_SHUTDOWN));
-    s9_log(S9_LOG_LEVEL_DEBUG, "Shutdown signal sent to all processors.");
     if (error_on_finalization) {
       s9_log(S9_LOG_LEVEL_DEBUG,
-             "Failed to send shutdown signal to processors. "
+             "failed to send shutdown signals to processors. "
              "(error code: %d)", error_on_finalization);
+    } else {
+      s9_log(S9_LOG_LEVEL_DEBUG, "shutdown signal sent to all processors.");
     }
   }
 
   error_on_finalizatoin = s9_finalize_network();
   if (error_on_finalization) {
     s9_log(S9_LOG_LEVEL_DEBUG,
-           "Failed to finalize communication environment of processors. "
+           "failed to finalize the processor network. "
            "(error code: %d)", error_on_finalization);
     goto just_exit;
   }
@@ -186,7 +187,7 @@ finalize_network:
 just_exit:
   if (error) {
     s9_log(S9_LOG_LEVEL_NOTICE,
-           "Failed to run Silky 9 because of error of the code, %d.", error);
+           "failed to run silky 9 because of error of the code, %d.", error);
     return EXIT_FAILURE;
   } else {
     return EXIT_SUCCESS;

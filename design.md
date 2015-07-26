@@ -1,6 +1,6 @@
-# Design
+# design
 
-## Architecture
+## architecture
 
 ```
 computer = processor { processor }
@@ -10,18 +10,18 @@ processor = token_queue node_memory instruction_executer
 
 ## Behavior
 
-### launch of processors
+### launching processors
 
-### dispatch of a program
+### loading a program
 
 ### execution of a program
 
 ### termination of processors
 
 
-## Instruction set
+## instruction set
 
-### Instruction categories
+### opcode categories
 
 name    | id
 --------|---:
@@ -30,7 +30,7 @@ logic   |  1
 int     |  2
 real    |  3
 
-### Instructions taking constant and variable operands
+### opcodes taking constant and variable operands
 
 category | name          |            id
 ---------|---------------|--------------:
@@ -59,7 +59,7 @@ int      | log\_c(x)     |            11
 int      | log\_x(c)     |            12
 real     | (same as int) | (same as int)
 
-### Instructions taking 2 variable operands
+### opcodes taking 2 variable operands
 
 category | name          |            id
 ---------|---------------|--------------:
@@ -75,9 +75,9 @@ int      | \*            |             2
 real     | (same as int) | (same as int)
 
 * shutdown instruction doesn't take any constant operand
-* do the not operations by xor with 1
+* do the not operations by xor
 * int's 1/x seems not to be defined
-* definition of bool type
+* definition of bool type is;
   * false := 0b0..0
   * true /= false
   * bool type has same expression as int type
@@ -88,38 +88,39 @@ real     | (same as int) | (same as int)
 * bigger and smaller instuctions for int and real?
 
 
-## Program
+## program
 
 ```
 program_file = symbol word_size program
 
 symbol = "JACK"
-word_size = Byte # (number of bits) / 8
+word_size = s9_byte_t # (number of bits) / 8
 
 program = num_of_nodes nodes num_of_initial_tokens initial_tokens
 
-num_of_nodes = Int
-num_of_initial_tokens = Int
+num_of_nodes = s9_int_t
+num_of_initial_tokens = s9_int_t
 
 nodes = node { node }
-node = one_dest_node | two_dest_node
-one_dest_node = instruction operand dest
-two_dest_node = instruction dest dest
-operand = Word
-dest = Int
+node = header ( stock_operand | constatnt_operand ) dest
+stock_operand = operand
+constant_operand = operand
+operand = s9_word_t
+dest = s9_int_t
 
-instruction = operand_presence_bit instruction_prefix instruction_id
+header = operand_presence_bit instruction_prefix instruction_id
 operand_presence_bit = uint1_t
 instruction_prefix = uint2_t
 instruction_id = uint5_t
 
 initial_tokens = token { token }
 token = dest value
-dest = Int
-value = Word
+dest = s9_int_t
+value = s9_word_t
 
-Byte = uint8_t
-Int = uint64_t
-Real = double # Real type must have the same endianness as Int type
-Word = Int | Real
+s9_byte_t = uint8_t
+s9_int_t = uint64_t
+s9_real_t = double
+  # s9_real_t type must have the same endianness as s9_int_t type has.
+s9_word_t = s9_int_t | s9_real_t
 ```

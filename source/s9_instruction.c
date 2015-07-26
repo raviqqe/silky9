@@ -1,127 +1,90 @@
-#include "inst.h"
+#include "s9_instruction.h"
 
 
-// types
+// PLEASE MOVE TO s9_opcode.c
 
-typedef InstId InstIdFieldMask;
-
-
-// constants
-
-const InstIdFieldMask kNumOfOperandsFieldMask = 0b001;
-const InstIdFieldMask kCategoryIdFieldMask    = 0b110;
-
-
-// functions
-
-static Int
-InstIdFieldMask_getPosition(const InstIdFieldMask mask)
+static s9_error_t
+s9_send_word(const s9_node_id_t dest, const s9_word_t value)
 {
-  Int position = 0;
-  InstIdFieldMask maskShifted = mask;
-
-  while ((maskShifted & 1) == 0) {
-    maskShifted >>= 1;
-    position++;
-    assert(position < sizeof(maskShifted) * 8);
-  }
-
-  return position;
+  return s9_send_token(s9_token_of(dest, value));
 }
 
 
-static Int
-InstId_getFieldValue(const InstId instId, const InstIdFieldMask mask)
+static s9_error_t
+s9_send_int(s9_node_id_t dest, s9_int_t int_num)
 {
-  return (instId & mask) >> InstIdFieldMask_getPosition(mask);
+  return s9_send_word(dest, s9_word_of_int(int_num));
 }
 
 
-static Int
-InstId_getNumOfOperands(const InstId instId)
+static s9_error_t
+s9_send_real(s9_node_id_t dest, s9_real_t real_num)
 {
-  return InstId_getFieldValue(instId, kNumOfOperandsFieldMask);
+  return s9_send_word(dest, s9_word_of_real(real_num));
 }
 
 
-static Int
-InstId_getCategoryId(const InstId instId) {
-  return InstId_getFieldValue(instId, kCategoryIdFieldMask);
+// opcodes
+
+static s9_token_t
+s9_opcode_control_copy()
+{
+  s9_send_word(node->int_num, operand);
+  s9_send_word(node->dest, operand);
 }
 
 
-static Err
-sendWord(const NodeId dest, const Word value)
+// s9_instruction.c
+
+s9_error_t
+s9_execute_instruction(s9_node_t * const node, const s9_word_t operand)
 {
-  return comm_sendMessage(Message_ofToken(Token_of(dest, value)));
-}
+  s9_error_t error = S9_OK;
 
-
-static Err
-sendInt(NodeId dest, Int intNum)
-{
-  return sendWord(dest, Word_ofInt(intNum));
-}
-
-
-static Err
-sendReal(NodeId dest, Real realNum)
-{
-  return sendWord(dest, Word_ofReal(realNum));
-}
-
-
-Err
-inst_executeInst(Node * const node, const Word operand)
-{
-  Err err = Err_OK;
-
-  if (InstId_getNumOfOperands(node->instId) == 2
-      && !node->operandPresentBit) {
-    Node_storeOperand(node, operand);
+  if (s9_get_num_of_operands_of_opcode(node->opcode) == 2
+      && s9_operand_is_stored_in_node(*node)) {
+    s9_store_operand_in_node(node, operand);
   } else {
-    Word operandInNode;
+    s9_word_t operand_in_node;
 
-    switch (node->instId) {
-    case inst_COPY:
-      sendWord(node->subDest, operand);
-      sendWord(node->dest, operand);
+    switch (node->opcode) {
+    case inst_OUTPUT:
       break;
-    case inst_IO:
-      //sendInt(node->dest, io(operand.intNum));
+      //send_int(node->dest, io(operand.intNum));
       break;
     case inst_SHUTDOWN:
-      err = comm_sendMessage(Message_ofSignal(Signal_SHUTDOWN));
+      error = comm_sendMessage(Message_ofSignal(Signal_SHUTDOWN));
       break;
     case inst_BOOL_NOT:
-      err = sendInt(node->dest, !operand.intNum);
+      error = sends9_int_t(node->dest, !operand.intNum);
       break;
     case inst_BOOL_AND:
-      err = sendInt(node->dest,
-                    operand.intNum && Node_takeOutOperand(node).intNum);
+      error = sends9_int_t(node->dest,
+                    operand.intNum && s9_node_t_takeOutOperand(node).intNum);
       break;
     case inst_BOOL_OR:
-      err = sendInt(node->dest,
-                    operand.intNum || Node_takeOutOperand(node).intNum);
+      error = sends9_int_t(node->dest,
+                    operand.intNum || s9_node_t_takeOutOperand(node).intNum);
       break;
     case inst_BOOL_XOR:
-      operandInNode.intNum = Node_takeOutOperand(node).intNum;
-      err = sendInt(node->dest,
-                    !(operand.intNum && operandInNode.intNum)
-                    && !(operand.intNum || operandInNode.intNum));
+      operandIns9_node_t.intNum = s9_node_t_takeOutOperand(node).intNum;
+      error = sends9_int_t(node->dest,
+                    !(operand.intNum && operandIns9_node_t.intNum)
+                    && !(operand.intNum || operandIns9_node_t.intNum));
       break;
     default:
-      DEBUG_INFO("Unknown instruction detected. (instruction id: %x)",
-                 node->instId);
-      return Err_INST_UNKNOWN;
+      s9_debug_log(S9_DEBUG_LEVEL_ERROR,
+                   "unknown opcode detected. (opcode = %x)", node->opcode);
+      return S9_ERROR_OPCODE_UNKNOWN;
     }
 
-    if (err) {
-      DEBUG_INFO("Failed to execute an instruction of code, %d.",
-                 node->instId);
-      return Err_INST_EXEC;
+    if (error) {
+      s9_debug_log(S9_DEBUG_LEVEL_ERROR,
+                   "failed to execute an instruction of opcode, %d.",
+                   node->opcode);
+      return error;
     }
   }
 
-  return err;
+  return error;
 }

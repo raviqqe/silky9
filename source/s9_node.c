@@ -2,12 +2,12 @@
 
 
 s9_node_t
-s9_node_of(const s9_int_t header,
+s9_node_of(const s9_header_t header,
            const s9_word_t operand,
            const s9_int_t dest)
 {
   return (s9_node_t){
-    .header = header,
+    .header.whole = header,
     .operand_ = operand,
     .dest = dest,
   };
@@ -18,12 +18,19 @@ void
 s9_store_operand_in_node(s9_node_t * const node, const s9_word_t operand)
 {
   assert(node != NULL);
-  assert(node->operand_present_bit_ == false);
+  assert(node->header.operand_present_bit_ == false);
 
   *node = (s9_node_t){
-    .operand_present_bit_ = true;
+    .header.operand_present_bit_ = true;
     .operand_ = operand;
   };
+}
+
+
+bool
+s9_operand_is_stored_in_node()
+{
+  return node->operand_present_bit_;
 }
 
 

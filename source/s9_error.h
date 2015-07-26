@@ -1,5 +1,5 @@
-#ifndef ERROR_H_
-#define ERROR_H_
+#ifndef S9_ERROR_H_
+#define S9_ERROR_H_
 
 
 typedef enum {
@@ -23,4 +23,4 @@ typedef enum {
 } s9_error_t;
 
 
-#endif // ERROR_H_
+#endif // S9_ERROR_H_

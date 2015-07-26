@@ -1,15 +1,15 @@
-#ifndef _INST_H
-#define _INST_H
+#ifndef S9_INSTRUCTION_H_
+#define S9_INSTRUCTION_H_
 
 
-#include "comm.h"
-#include "type.h"
+#include "s9_log.h"
+#include "s9_token.h"
+#include "s9_type.h"
+#include "s9_opcode.h"
 
 
-typedef Int InstId;
+s9_error_t s9_execute_instruction(s9_node_t * const node,
+                                  const s9_word_t operand);
 
 
-Int inst_executeInst(Node * const node, const Word operand);
-
-
-#endif
+#endif // S9_INSTRUCTION_H_

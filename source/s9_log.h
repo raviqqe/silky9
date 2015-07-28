@@ -1,31 +1,45 @@
-#ifndef LOG_H_
-#define LOG_H_
+#ifndef S9_LOG_H_
+#define S9_LOG_H_
 
 
 #include <stdio.h>
 #include <stdarg.h>
 
-#include "config.h"
+#include "s9_config.h"
 
 
-#define s9_log(log_level, ...) \
-  s9_log_(log_level, __FILE__, __LINE__, __func__, __VA_ARGS__)
+#ifdef S9_CONFIG_DEBUG_LOG
+#define s9_debug_log(debug_level, ...) do { \
+    if (debug_level >= S9_CONFIG_DEBUG_LEVEL) { \
+      fprintf(stderr, "s9:%s:%d:%s(): ", __FILE__, __LINE__, __func__); \
+      s9_print_log_(__VA_ARGS__); \
+    } \
+  } while (0)
+#else
+#define s9_debug_log(debug_level, ...)
+#endif
+
+#define s9_log(log_level, ...) do { \
+    if (log_level >= S9_CONFIG_LOG_LEVEL) { \
+      s9_print_log_(__VA_ARGS__); \
+    } \
+  } while (0)
 
 
 typedef enum {
-  S9_LOG_LEVEL_DEBUG,
+  S9_DEBUG_LEVEL_VERBOSE,
+  S9_DEBUG_LEVEL_ERROR,
+} s9_debug_level_t;
+
+
+typedef enum {
   S9_LOG_LEVEL_NOTICE,
-  S9_LOG_LEVEL_ERROR,
   S9_LOG_LEVEL_WARNING,
+  S9_LOG_LEVEL_ERROR,
 } s9_log_level_t;
 
 
-// don't use this function directly
-s9_log_(const s9_log_level_t log_level,
-        const char * const filename,
-        const int line_num,
-        const char * const function,
-        ...);
+s9_print_log_(const char * const format, ...);
 
 
-#endif // LOG_H_
+#endif // S9_LOG_H_

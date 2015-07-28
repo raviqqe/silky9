@@ -2,7 +2,9 @@
 #define S9_CONFIG_H_
 
 
-#define S9_CONFIG_DEBUG
+#define S9_CONFIG_DEBUG_LOG
+#define S9_CONFIG_DEBUG_LEVEL S9_DEBUG_LEVEL_VERBOSE // see s9_log.h
+#define S9_CONFIG_LOG_LEVEL S9_LOG_LEVEL_NOTICE // see s9_log.h
 #define S9_CONFIG_MPI_ASYNC_IO
 //#define S9_CONFIG_MPI_ERRORS_ARE_FATAL
 #define S9_CONFIG_WORD_SIZE 8 // in bytes

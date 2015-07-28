@@ -4,8 +4,8 @@
 
 #include <assert.h>
 
-#include "s9_type.h"
 #include "s9_network_info.h"
+#include "s9_type.h"
 
 
 enum {

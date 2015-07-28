@@ -1,4 +1,4 @@
-#include "token.h"
+#include "s9_token.h"
 
 
 s9_token_t
@@ -16,16 +16,13 @@ s9_send_token(const s9_network_info_t network_info, const s9_token_t token)
 {
   assert(s9_network_is_initialized(network_info));
 
-  int mpi_error = MPI_Send(&token, 1,
-                           network_info.mpi_datatypes[S9_MPI_DATATYPE_TOKEN],
-                           s9_calc_dest_processor_id(network_info, token.dest),
-                           S9_MPI_TAG_TOKEN, MPI_COMM_WORLD);
+  int mpi_error = s9_mpi_send(
+      &token, network_info.mpi_datatypes[S9_MPI_DATATYPE_INDEX_TOKEN],
+      s9_calc_dest_processor_id(network_info, token.dest), S9_MPI_TAG_TOKEN);
   if (mpi_error) {
-    s9_mpi_debug_log("MPI_Send", mpi_error);
+    s9_mpi_debug_log("s9_mpi_send", mpi_error);
     return S9_ERROR_SEND_TOKEN;
   }
 
   return S9_OK;
 }
-
-

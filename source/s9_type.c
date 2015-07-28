@@ -1,15 +1,15 @@
-#include "word.h"
+#include "s9_type.h"
 
 
-sq_word_t
-sq_word_of_int(const sq_int_t int_num)
+s9_word_t
+s9_word_of_int(const s9_int_t int_num)
 {
-  return (sq_word_t){.int_ = int_num};
+  return (s9_word_t){.int_num = int_num};
 }
 
 
-sq_word_t
-sq_word_of_real(const sq_real_t real_num)
+s9_word_t
+s9_word_of_real(const s9_real_t real_num)
 {
-  return (wq_word_t){.real_ = real_num};
+  return (s9_word_t){.real_num = real_num};
 }

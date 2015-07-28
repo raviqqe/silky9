@@ -1,12 +1,12 @@
-#ifndef TYPE_H_
-#define TYPE_H_
+#ifndef S9_TYPE_H_
+#define S9_TYPE_H_
 
 
 #include <stdint.h>
 
 
-//typedef uint8_t s9_byte_t;
-//#define S9_DUMMY_BYTE 0xEF
+typedef uint8_t s9_byte_t;
+#define S9_DUMMY_BYTE 0xEF
 typedef uint64_t s9_int_t;
 #define S9_DUMMY_INT 0xDEADBEEF
 typedef double s9_real_t;
@@ -24,4 +24,4 @@ s9_word_t s9_word_of_int(const s9_int_t int_num);
 s9_word_t s9_word_of_real(const s9_real_t real_num);
 
 
-#endif // TYPE_H_
+#endif // S9_TYPE_H_

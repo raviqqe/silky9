@@ -16,12 +16,13 @@ typedef s9_int_t s9_node_id_t; // conforming to design
 typedef union {
   s9_byte_t whole;
   struct {
-    bool operand_present_bit_ : 1;
-    const unsigned int opcode_num_of_operands : 1;
-    const unsigned int opcode_category : 2;
-    const unsigned int opcode_stem : 4;
+    bool                        operand_present_bit_ : 1;
+    const unsigned int          opcode_num_of_operands : 1;
+    const s9_opcode_category_t  opcode_category : 2;
+    const s9_opcode_stem_t      opcode_stem : 4;
   };
 } s9_node_header_t;
+#define S9_DUMMY_NODE_HEADER S9_DUMMY_BYTE
 
 
 typedef struct {
@@ -31,7 +32,7 @@ typedef struct {
 } s9_node_t;
 
 #define S9_DUMMY_NODE (s9_node_t){ \
-  .header = S9_DUMMY_OPCODE, \
+  .header.whole = S9_DUMMY_NODE_HEADER, \
   .operand_ = S9_DUMMY_WORD, \
   .dest = S9_DUMMY_NODE_ID, \
 }

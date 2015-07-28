@@ -1,47 +1,6 @@
 #include "network.h"
 
 
-// macros
-
-#define s9_mpi_log(mpi_function, mpi_error) \
-  s9_log(S9_LOG_LEVEL_DEBUG, \
-         "MPI function, %s() failed. (MPI error code: %d)", \
-         (mpi_function), (mpi_error))
-
-
-// types
-
-typedef s9_int_t s9_processor_id_t;
-#define S9_DUMMY_PROCESSOR_ID S9_DUMMY_INT
-    // this is not in design, but conforms to it.
-
-typedef struct {
-  const s9_processor_id_t processor_id;
-  const s9_int_t num_of_processors;
-  MPI_Datatype datatypes[5];
-} s9_network_t;
-
-#define S9_DUMMY_NETWORK \
-  (s9_network_t){ \
-    .processor_id = S9_DUMMY_PROCESSOR_ID, \
-    .num_of_processors = S9_DUMMY_INT, \
-    .datatypes = (MPI_Datatype[3]){ \
-      MPI_DATATYPE_NULL, \
-      MPI_DATATYPE_NULL, \
-      MPI_DATATYPE_NULL, \
-    } \
-  }
-
-
-enum {
-  S9_MPI_DATATYPE_BYTE,
-  S9_MPI_DATATYPE_WORD,
-  S9_MPI_DATATYPE_TOKEN,
-  S9_MPI_DATATYPE_NODE,
-  S9_MPI_DATATYPE_SIGNAL,
-} s9_mpi_datatype_t;
-
-
 // functions
 
 s9_error_t

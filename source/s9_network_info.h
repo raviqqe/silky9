@@ -35,7 +35,7 @@ typedef struct {
 
 
 s9_error_t s9_initialize_network(s9_network_info_t * const network_info);
-s9_error_t s9_finalize_network();
+s9_error_t s9_finalize_network(const s9_network_info_t network_info);
 bool s9_network_is_initialized(const s9_network_info_t network_info);
 s9_processor_id_t s9_calc_dest_processor_id(
     const s9_network_info_t network_info,

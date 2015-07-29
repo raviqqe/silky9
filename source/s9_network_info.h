@@ -8,7 +8,6 @@
 #include "s9_error.h"
 #include "s9_log.h"
 #include "s9_mpi.h"
-#include "s9_node.h"
 #include "s9_signal.h"
 #include "s9_token.h"
 #include "s9_type.h"

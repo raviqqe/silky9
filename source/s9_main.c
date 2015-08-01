@@ -19,11 +19,9 @@ s9_process_tokens(s9_node_memory_t * const node_memory)
   s9_debug_log(S9_LOG_LEVEL_VERBOSE, "starting to process messages...");
   assert(node_memory != NULL);
 
-  s9_error_t error = S9_OK;
-  s9_receive_buffer_t buffer = S9_DUMMY_RECEIVE_BUFFER;
-
   while (true) {
-    error = s9_receive_token_or_signal(&buffer);
+    s9_receive_buffer_t buffer = S9_DUMMY_RECEIVE_BUFFER;
+    s9_error_t error = s9_receive_token_or_signal(&buffer);
     if (error) {
       s9_log(S9_LOG_LEVEL_ERROR, "failed to receive a token or signal.");
       return error;
@@ -32,32 +30,39 @@ s9_process_tokens(s9_node_memory_t * const node_memory)
     if (s9_token_is_received(buffer)) {
       s9_debug_log(S9_LOG_LEVEL_VERBOSE, "a token is received.");
 
+      s9_token_t token = s9_token_in_receive_buffer(buffer);
+
       s9_node_t *node = NULL;
-      error = s9_memory_t_gets9_node_tOfId(node_memory, locals9_node_tId, &node);
+      s9_error_t error = s9_get_node_in_node_memory(node_memory, token.dest,
+                                                    &node);
       if (error) {
-        s9_log(S9_LOG_LEVEL_DEBUG, "Failed to get an address of node from a node "
-                      "memory.");
+        s9_debug_log(S9_LOG_LEVEL_ERROR,
+                     "failed to get an address of node from a node memory.");
         return error;
       }
 
-      error = inst_executeInst(node, Message_getToken(message).value);
+      error = s9_execute_instruction(node, token.value);
       if (error) {
-        s9_log(S9_LOG_LEVEL_DEBUG, "Failed to execute an instruction.");
+        s9_debug_log(S9_LOG_LEVEL_ERROR, "failed to execute an instruction.");
         return error;
       }
     } else if (s9_signal_is_received(buffer)) {
       s9_debug_log(S9_LOG_LEVEL_VERBOSE, "a signal is received.");
-      switch (Message_getSignal(message)) {
-      case Signal_SHUTDOWN:
-        goto final;
+
+      s9_signal_t signal = s9_signal_in_receive_buffer(buffer);
+
+      switch (signal) {
+      case S9_SIGNAL_HALT:
+        return S9_OK;
       default:
-        s9_log(S9_LOG_LEVEL_DEBUG, "Unknown signal detected. (signal: %d)",
-                      Message_getSignal(message));
+        s9_debug_log(S9_LOG_LEVEL_ERROR,
+                     "unknown signal detected. (signal: %d)", signal);
         return S9_ERROR_SIGNAL_UNKNOWN;
       }
-    } else
-
-
+    } else {
+      s9_debug_log(S9_LOG_LEVEL_ERROR, "data of unknown type is received.");
+      return S9_ERROR_UNKNOWN_DATA;
+    }
   } // while (true)
 
   return S9_OK;

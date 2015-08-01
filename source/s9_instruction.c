@@ -52,8 +52,8 @@ s9_execute_instruction(s9_node_t * const node, const s9_word_t operand)
       break;
       //send_int(node->dest, io(operand.intNum));
       break;
-    case inst_SHUTDOWN:
-      error = comm_sendMessage(Message_ofSignal(Signal_SHUTDOWN));
+    case inst_HALT:
+      error = comm_sendMessage(Message_ofSignal(Signal_HALT));
       break;
     case inst_BOOL_NOT:
       error = sends9_int_t(node->dest, !operand.intNum);

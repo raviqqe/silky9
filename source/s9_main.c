@@ -133,7 +133,7 @@ finalize_node_memory:
 finalize_network:
   if (error) {
     error_on_finalization = s9_send_message(
-        s9_message_of_signal(S9_SIGNAL_SHUTDOWN));
+        s9_message_of_signal(S9_SIGNAL_HALT));
     if (error_on_finalization) {
       s9_debug_log(S9_LOG_LEVEL_ERROR,
                    "failed to send shutdown signals to processors. "

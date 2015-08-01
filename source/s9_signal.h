@@ -9,7 +9,7 @@
 
 
 enum {
-  S9_SIGNAL_SHUTDOWN,
+  S9_SIGNAL_HALT,
 };
 typedef s9_byte_t s9_signal_t
 #define S9_DUMMY_SIGNAL S9_DUMMY_BYTE

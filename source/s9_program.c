@@ -2,7 +2,7 @@
 
 
 #define s9_fread_log(read_size) \
-    s9_debug_log(S9_DEBUG_LEVEL_ERROR, \
+    s9_debug_log(S9_LOG_LEVEL_ERROR, \
            "Failed to read enough size of data from program file. " \
            "(size of read data is %dB)", (read_size))
 

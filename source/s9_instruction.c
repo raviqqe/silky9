@@ -73,13 +73,13 @@ s9_execute_instruction(s9_node_t * const node, const s9_word_t operand)
                     && !(operand.intNum || operandIns9_node_t.intNum));
       break;
     default:
-      s9_debug_log(S9_DEBUG_LEVEL_ERROR,
+      s9_debug_log(S9_LOG_LEVEL_ERROR,
                    "unknown opcode detected. (opcode = %x)", node->opcode);
       return S9_ERROR_OPCODE_UNKNOWN;
     }
 
     if (error) {
-      s9_debug_log(S9_DEBUG_LEVEL_ERROR,
+      s9_debug_log(S9_LOG_LEVEL_ERROR,
                    "failed to execute an instruction of opcode, %d.",
                    node->opcode);
       return error;

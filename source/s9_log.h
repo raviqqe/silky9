@@ -9,8 +9,8 @@
 
 
 #ifdef S9_CONFIG_DEBUG_LOG
-#define s9_debug_log(debug_level, ...) do { \
-    if (debug_level >= S9_CONFIG_DEBUG_LEVEL) { \
+#define s9_debug_log(log_level, ...) do { \
+    if (log_level >= S9_CONFIG_DEBUG_LOG_LEVEL) { \
       fprintf(stderr, "s9:%s:%d:%s(): ", __FILE__, __LINE__, __func__); \
       s9_print_log_(__VA_ARGS__); \
     } \
@@ -27,12 +27,7 @@
 
 
 typedef enum {
-  S9_DEBUG_LEVEL_VERBOSE,
-  S9_DEBUG_LEVEL_ERROR,
-} s9_debug_level_t;
-
-
-typedef enum {
+  S9_LOG_LEVEL_VERBOSE,
   S9_LOG_LEVEL_NOTICE,
   S9_LOG_LEVEL_WARNING,
   S9_LOG_LEVEL_ERROR,

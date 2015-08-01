@@ -8,7 +8,7 @@
 
 
 #define s9_mpi_debug_log(mpi_function, mpi_error) \
-  s9_debug_log(S9_DEBUG_LEVEL_ERROR, \
+  s9_debug_log(S9_LOG_LEVEL_ERROR, \
                "MPI: function, %s() failed. (MPI error code: %d)", \
                (mpi_function), (mpi_error))
 

@@ -16,7 +16,7 @@
 static s9_error_t
 s9_process_tokens(s9_node_memory_t * const node_memory)
 {
-  s9_debug_log(S9_DEBUG_LEVEL_VERBOSE, "starting to process messages...");
+  s9_debug_log(S9_LOG_LEVEL_VERBOSE, "starting to process messages...");
   assert(node_memory != NULL);
 
   s9_error_t error = S9_OK;
@@ -25,12 +25,12 @@ s9_process_tokens(s9_node_memory_t * const node_memory)
   while (true) {
     error = s9_receive_token_or_signal(&buffer);
     if (error) {
-      s9_log(S9_DEBUG_LEVEL_ERROR, "failed to receive a token or signal.");
+      s9_log(S9_LOG_LEVEL_ERROR, "failed to receive a token or signal.");
       return error;
     }
 
     if (s9_token_is_received(buffer)) {
-      s9_debug_log(S9_DEBUG_LEVEL_VERBOSE, "a token is received.");
+      s9_debug_log(S9_LOG_LEVEL_VERBOSE, "a token is received.");
 
       s9_node_t *node = NULL;
       error = s9_memory_t_gets9_node_tOfId(node_memory, locals9_node_tId, &node);
@@ -46,7 +46,7 @@ s9_process_tokens(s9_node_memory_t * const node_memory)
         return error;
       }
     } else if (s9_signal_is_received(buffer)) {
-      s9_debug_log(S9_DEBUG_LEVEL_VERBOSE, "a signal is received.");
+      s9_debug_log(S9_LOG_LEVEL_VERBOSE, "a signal is received.");
       switch (Message_getSignal(message)) {
       case Signal_SHUTDOWN:
         goto final;
@@ -85,29 +85,29 @@ main(const int argc, const char * const * const argv)
   s9_protocol_t protocol = S9_DUMMY_PROTOCOL;
   error = s9_initialize_network(&protocol);
   if (error) {
-    s9_debug_log(S9_DEBUG_LEVEL_ERROR,
+    s9_debug_log(S9_LOG_LEVEL_ERROR,
                  "failed to initialize the processor network.");
     goto just_exit;
   }
 
-  s9_debug_log(S9_DEBUG_LEVEL_VERBOSE,
+  s9_debug_log(S9_LOG_LEVEL_VERBOSE,
                "the processor #%lld launched!", protocol.processor_id);
 
   s9_node_memory_t node_memory = S9_DUMMY_NODE_MEMORY;
   error = s9_initilalize_node_memory(&node_memory);
   if (error) {
-    s9_debug_log(S9_DEBUG_LEVEL_ERROR, "failed to initialize a node memory.");
+    s9_debug_log(S9_LOG_LEVEL_ERROR, "failed to initialize a node memory.");
     goto finalize_network;
   }
 
   error = s9_load_nodes(node_file, &node_memory, protocol);
   if (error) {
-    s9_debug_log(S9_DEBUG_LEVEL_ERROR,
+    s9_debug_log(S9_LOG_LEVEL_ERROR,
                  "failed to load nodes to a node memory.");
     goto finalize_node_memory;
   }
 
-  s9_debug_log(S9_DEBUG_LEVEL_VERBOSE, "a node memory initialized!");
+  s9_debug_log(S9_LOG_LEVEL_VERBOSE, "a node memory initialized!");
 
   error = s9_process_messages(&node_memory);
   if (error) {

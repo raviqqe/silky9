@@ -36,7 +36,7 @@ s9_receive_token_or_signal(const s9_protocol_t protocol,
     }
     break;
   default:
-    s9_debug_log(S9_DEBUG_LEVEL_ERROR,
+    s9_debug_log(S9_LOG_LEVEL_ERROR,
            "unknown tag detected during receiving a token or signal"
            "(tag = %d)", status.MPI_TAG);
     return S9_ERROR_RECEIVE;

@@ -31,16 +31,6 @@ s9_process_tokens(s9_node_memory_t * const node_memory)
 
     if (s9_token_is_received(buffer)) {
       s9_debug_log(S9_DEBUG_LEVEL_VERBOSE, "a token is received.");
-      s9_node_id local_node_id = S9_DUMMY_NODE_ID;
-
-      error = s9_calc_local_node_id(s9_token_in_message(message).dest,
-                                    &local_node_id);
-      if (error) {
-        s9_log(S9_LOG_LEVEL_DEBUG,
-               "Failed to calculate a local node ID from a global one of "
-               "token's destination.");
-        return error;
-      }
 
       s9_node_t *node = NULL;
       error = s9_memory_t_gets9_node_tOfId(memory, locals9_node_tId, &node);

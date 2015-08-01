@@ -2,10 +2,10 @@
 
 
 s9_error_t
-s9_receive_token_or_signal(const s9_network_info_t network_info,
+s9_receive_token_or_signal(const s9_protocol_t protocol,
                            s9_receive_buffer_t * const receive_buffer)
 {
-  assert(s9_network_is_initialized(network_info));
+  assert(s9_network_is_initialized(protocol));
 
   MPI_Status status;
   int mpi_error = s9_mpi_probe(&status);
@@ -20,7 +20,7 @@ s9_receive_token_or_signal(const s9_network_info_t network_info,
   case S9_MPI_TAG_TOKEN:
     mpi_error = s9_mpi_recv(
         &receive_buffer->token,
-        network_info->mpi_datatypes[S9_MPI_DATATYPE_INDEX_TOKEN]);
+        protocol->mpi_datatypes[S9_MPI_DATATYPE_INDEX_TOKEN]);
     if (mpi_error) {
       s9_mpi_debug_log("MPI_Recv", mpi_error);
       return S9_ERROR_RECEIVE;
@@ -29,7 +29,7 @@ s9_receive_token_or_signal(const s9_network_info_t network_info,
   case S9_MPI_TAG_SIGNAL:
     mpi_error = s9_mpi_recv(
         &receive_buffer->signal,
-        network_info->mpi_datatypes[S9_MPI_DATATYPE_INDEX_SIGNAL]);
+        protocol->mpi_datatypes[S9_MPI_DATATYPE_INDEX_SIGNAL]);
     if (mpi_error) {
       s9_mpi_debug_log("MPI_Recv", mpi_error);
       return S9_ERROR_RECEIVE;

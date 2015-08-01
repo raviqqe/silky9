@@ -22,10 +22,10 @@ typedef struct {
   const s9_int_t num_of_processors;
   s9_mpi_datatype_list_t mpi_datatypes;
   bool network_is_initialized_;
-} s9_network_info_t;
+} s9_protocol_t;
 
 #define S9_DUMMY_NETWORK_INFO \
-  (s9_network_info_t){ \
+  (s9_protocol_t){ \
     .processor_id = S9_DUMMY_PROCESSOR_ID, \
     .num_of_processors = S9_DUMMY_INT, \
     .mpi_datatypes = S9_DUMMY_MPI_DATATYPE_LIST, \
@@ -33,13 +33,13 @@ typedef struct {
   }
 
 
-s9_error_t s9_initialize_network(s9_network_info_t * const network_info);
-s9_error_t s9_finalize_network(const s9_network_info_t network_info);
-bool s9_network_is_initialized(const s9_network_info_t network_info);
+s9_error_t s9_initialize_network(s9_protocol_t * const protocol);
+s9_error_t s9_finalize_network(const s9_protocol_t protocol);
+bool s9_network_is_initialized(const s9_protocol_t protocol);
 s9_processor_id_t s9_calc_dest_processor_id(
-    const s9_network_info_t network_info,
+    const s9_protocol_t protocol,
     const s9_node_id_t global_node_id);
-s9_node_id_t s9_calc_local_node_id(const s9_network_info_t network_info,
+s9_node_id_t s9_calc_local_node_id(const s9_protocol_t protocol,
                                    const s9_node_id_t global_node_id);
 
 

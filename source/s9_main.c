@@ -112,11 +112,18 @@ main(const int argc, const char * const * const argv)
     goto finalize_node_memory;
   }
 
+  error = s9_dispatch_tokens(token_file, protocol);
+  if (error) {
+    s9_debug_log(S9_LOG_LEVEL_ERROR,
+                 "failed to load nodes to a node memory.");
+    goto finalize_node_memory;
+  }
+
   s9_debug_log(S9_LOG_LEVEL_VERBOSE, "a node memory initialized!");
 
-  error = s9_process_messages(&node_memory);
+  error = s9_process_messages(&node_memory, protocol);
   if (error) {
-    s9_log(S9_LOG_LEVEL_DEBUG, "Failed to processs some messages.");
+    s9_log(S9_LOG_LEVEL_DEBUG, "failed to processs some messages.");
     goto finalize_node_memory;
   }
 

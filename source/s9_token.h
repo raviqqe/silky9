@@ -4,6 +4,7 @@
 
 #include <assert.h>
 
+#include "s9_error.h"
 #include "s9_log.h"
 #include "s9_node.h"
 #include "s9_type.h"

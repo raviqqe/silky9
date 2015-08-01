@@ -1,107 +1,76 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "debug.h"
-#include "error.h"
-#include "instruction.h"
-#include "message.h"
-#include "network.h"
-#include "node.h"
-#include "type.h"
-#include "program.h"
+#include "s9_error.h"
+#include "s9_instruction.h"
+#include "s9_log.h"
+#include "s9_node.h"
+#include "s9_program.h"
+#include "s9_protocol.h"
+#include "s9_receive.h"
+#include "s9_signal.h"
+#include "s9_token.h"
+#include "s9_type.h"
 
-
-// functions
 
 static s9_error_t
-s9_process_messages(s9_memory_t * const memory)
+s9_process_tokens(s9_node_memory_t * const node_memory)
 {
-  s9_log(S9_LOG_LEVEL_DEBUG, "starting to process messages...");
-  assert(memory != NULL);
+  s9_debug_log(S9_DEBUG_LEVEL_VERBOSE, "starting to process messages...");
+  assert(node_memory != NULL);
 
   s9_error_t error = S9_OK;
+  s9_receive_buffer_t buffer = S9_DUMMY_RECEIVE_BUFFER;
 
   while (true) {
-    s9_message_t message = S9_DUMMY_MESSAGE;
-    error = s9_receive_message(&message);
+    error = s9_receive_token_or_signal(&buffer);
     if (error) {
-      s9_log(S9_LOG_LEVEL_DEBUG, "failed to receive a message.");
-      goto final;
+      s9_log(S9_DEBUG_LEVEL_ERROR, "failed to receive a token or signal.");
+      return error;
     }
 
-    switch (message.tag) {
-    case S9_MESSAGE_TAG_TOKEN:
-      s9_log(S9_LOG_LEVEL_DEBUG, "message of S9_MESSAGE_TAG_TOKEN received.");
-      {
-        s9_node_id local_node_id = S9_DUMMY_NODE_ID;
+    if (s9_token_is_received(buffer)) {
+      s9_debug_log(S9_DEBUG_LEVEL_VERBOSE, "a token is received.");
+      s9_node_id local_node_id = S9_DUMMY_NODE_ID;
 
-        error = s9_calc_local_node_id(s9_token_in_message(message).dest,
-                                      &local_node_id);
-        if (error) {
-          s9_log(S9_LOG_LEVEL_DEBUG,
-                 "Failed to calculate a local node ID from a global one of "
-                 "token's destination.");
-          goto final;
-        }
-
-        s9_node_t *node = NULL;
-        error = s9_memory_t_gets9_node_tOfId(memory, locals9_node_tId, &node);
-        if (error) {
-          s9_log(S9_LOG_LEVEL_DEBUG, "Failed to get an address of node from a node "
-                        "memory.");
-          goto final;
-        }
-
-        error = inst_executeInst(node, Message_getToken(message).value);
-        if (error) {
-          s9_log(S9_LOG_LEVEL_DEBUG, "Failed to execute an instruction.");
-          goto final;
-        }
+      error = s9_calc_local_node_id(s9_token_in_message(message).dest,
+                                    &local_node_id);
+      if (error) {
+        s9_log(S9_LOG_LEVEL_DEBUG,
+               "Failed to calculate a local node ID from a global one of "
+               "token's destination.");
+        return error;
       }
-      break;
-    case S9_MESSAGE_TAG_NODE_UPDATE:
-      s9_log(S9_LOG_LEVEL_DEBUG, "Message of S9_MESSAGE_TAG_NODE_UPDATE received.");
-      {
-        s9_node_tId locals9_node_tId = s9_node_tId_DUMMY;
 
-        error = comm_calcLocals9_node_tId(Message_gets9_node_tUpdate(message).nodeId,
-                                   &locals9_node_tId);
-        if (error) {
-          s9_log(S9_LOG_LEVEL_DEBUG, "Failed to calculate a local node ID from a global"
-                        "one of node update.");
-          goto final;
-        }
-
-        error = s9_memory_t_sets9_node_tOfId(memory, locals9_node_tId,
-                                     Message_gets9_node_tUpdate(message).node);
-        if (error) {
-          s9_log(S9_LOG_LEVEL_DEBUG, "Failed to update a node in a node memory.");
-          goto final;
-        }
+      s9_node_t *node = NULL;
+      error = s9_memory_t_gets9_node_tOfId(memory, locals9_node_tId, &node);
+      if (error) {
+        s9_log(S9_LOG_LEVEL_DEBUG, "Failed to get an address of node from a node "
+                      "memory.");
+        return error;
       }
-      break;
-    case S9_MESSAGE_TAG_SIGNAL:
-      s9_log(S9_LOG_LEVEL_DEBUG, "Message of S9_MESSAGE_TAG_SIGNAL received.");
+
+      error = inst_executeInst(node, Message_getToken(message).value);
+      if (error) {
+        s9_log(S9_LOG_LEVEL_DEBUG, "Failed to execute an instruction.");
+        return error;
+      }
+    } else if (s9_signal_is_received(buffer)) {
+      s9_debug_log(S9_DEBUG_LEVEL_VERBOSE, "a signal is received.");
       switch (Message_getSignal(message)) {
       case Signal_SHUTDOWN:
         goto final;
       default:
         s9_log(S9_LOG_LEVEL_DEBUG, "Unknown signal detected. (signal: %d)",
                       Message_getSignal(message));
-        error = s9_error_t_SIGNAL_UNKNOWN;
-        goto final;
+        return S9_ERROR_SIGNAL_UNKNOWN;
       }
-      break;
-    default:
-      s9_log(S9_LOG_LEVEL_DEBUG, "Unknown message tag detected. (message tag: %d)",
-                    message.tag);
-      error = s9_error_t_MESSAGE_TAG;
-      goto final;
-    } // switch (message.tag)
+    } else
+
+
   } // while (true)
 
-final:
-  return err;
+  return S9_OK;
 }
 
 

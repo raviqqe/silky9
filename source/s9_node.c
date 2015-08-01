@@ -2,7 +2,7 @@
 
 
 s9_node_t
-s9_node_of(const s9_header_t header,
+s9_node_of(const s9_node_header_t header,
            const s9_word_t operand,
            const s9_int_t dest)
 {

@@ -1,9 +1,11 @@
 program = s9
 
 cc = clang
-cflags = -g -Wall -Iinclude
+cflags = -g -Wall -Isource
 ldflags = -L/usr/lib/openmpi -lmpi
-#builddir = obj
+
+srcdir = source
+builddir = build
 
 
 rule ld
@@ -15,11 +17,12 @@ rule cc
   command = $cc -MMD -MF $out.d $cflags -c $in -o $out
 
 
-build $program: ld comm.o inst.o main.o message.o node.o program.o type.o
-build comm.o: cc comm.c
-build inst.o: cc inst.c
-build main.o: cc main.c
-build message.o: cc message.c
-build node.o: cc node.c
-build program.o: cc program.c
-build type.o: cc type.c
+#build $program: ld protocol.o s9_instruction.o s9_main.o s9_token.o $
+#    s9_node.o s9_program.o s9_type.o s9_
+#build $builddir/protocol.o: cc protocol.c
+build $builddir/s9_main.o: cc $srcdir/s9_main.c
+build $builddir/s9_token.o: cc $srcdir/s9_token.c
+build $builddir/s9_node.o: cc $srcdir/s9_node.c
+build $builddir/s9_program.o: cc $srcdir/s9_program.c
+build $builddir/s9_type.o: cc $srcdir/s9_type.c
+build $builddir/s9_instruction.o: cc $srcdir/s9_instruction.c

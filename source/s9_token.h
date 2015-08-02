@@ -6,6 +6,7 @@
 
 #include "s9_error.h"
 #include "s9_log.h"
+#include "s9_network.h"
 #include "s9_node.h"
 #include "s9_type.h"
 

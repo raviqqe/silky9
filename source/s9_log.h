@@ -34,7 +34,7 @@ typedef enum {
 } s9_log_level_t;
 
 
-s9_print_log_(const char * const format, ...);
+void s9_print_log_(const char * const format, ...);
 
 
 #endif // S9_LOG_H_

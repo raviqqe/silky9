@@ -1,9 +1,7 @@
-#ifndef S9_OPCODE_H
-#define S9_OPCODE_H
+#ifndef S9_OPCODE_H_
+#define S9_OPCODE_H_
 
 
-//typedef Inst OneOperandInst;
-//extern OneOperandInst OneOperandInstTable[4][16];
 
 
-#endif // S9_OPCODE_H
+#endif // S9_OPCODE_H_

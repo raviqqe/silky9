@@ -5,8 +5,8 @@
 #include <stdint.h>
 
 
-typedef uint8_t s9_byte_t;
-#define S9_DUMMY_BYTE 0xEF
+//typedef uint8_t s9_byte_t;
+//#define S9_DUMMY_BYTE 0xEF
 typedef uint64_t s9_int_t;
 #define S9_DUMMY_INT 0xDEADBEEF
 typedef double s9_real_t;

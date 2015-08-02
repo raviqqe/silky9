@@ -13,7 +13,7 @@
                (mpi_function), (mpi_error))
 
 
-typedef MPI_Datatype s9_mpi_datatype_list[5];
+typedef MPI_Datatype s9_mpi_datatype_list_t[5];
 
 
 typedef enum {

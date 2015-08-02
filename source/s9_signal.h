@@ -4,15 +4,15 @@
 
 #include <assert.h>
 
-#include "s9_protocol.h"
+#include "s9_network.h"
 #include "s9_type.h"
 
 
 enum {
   S9_SIGNAL_HALT,
 };
-typedef s9_byte_t s9_signal_t
-#define S9_DUMMY_SIGNAL S9_DUMMY_BYTE
+typedef s9_int_t s9_signal_t;
+#define S9_DUMMY_SIGNAL S9_DUMMY_INT
 
 
 s9_error_t s9_send_signal(const s9_protocol_t protocol,

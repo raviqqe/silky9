@@ -8,6 +8,7 @@
 #include "s9_error.h"
 #include "s9_log.h"
 #include "s9_mpi.h"
+#include "s9_node.h"
 #include "s9_signal.h"
 #include "s9_token.h"
 #include "s9_type.h"
@@ -24,7 +25,7 @@ typedef struct {
   bool network_is_initialized_;
 } s9_protocol_t;
 
-#define S9_DUMMY_NETWORK_INFO \
+#define S9_DUMMY_PROTOCOL \
   (s9_protocol_t){ \
     .processor_id = S9_DUMMY_PROCESSOR_ID, \
     .num_of_processors = S9_DUMMY_INT, \

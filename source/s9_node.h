@@ -14,15 +14,19 @@ typedef s9_int_t s9_node_id_t; // conforming to design
 
 
 typedef union {
-  s9_byte_t whole;
+  s9_int_t whole;
   struct {
-    bool                        operand_present_bit_ : 1;
-    const unsigned int          opcode_num_of_operands : 1;
-    const s9_opcode_category_t  opcode_category : 2;
-    const s9_opcode_stem_t      opcode_stem : 4;
+    bool            operand_present_bit_ : 1;
+    const bool      num_of_operands_ : 1;
+    const s9_int_t  opcode_category : 2;
+    const s9_int_t  opcode_stem : 4;
   };
 } s9_node_header_t;
+
 #define S9_DUMMY_NODE_HEADER S9_DUMMY_BYTE
+
+static_assert(sizeof(s9_node_header_t) == sizeof(s9_int_t),
+              "s9_node_header_t's size is not compatible with s9_int_t.");
 
 
 typedef struct {
@@ -37,6 +41,9 @@ typedef struct {
   .dest = S9_DUMMY_NODE_ID, \
 }
 
+static_assert(sizeof(s9_node_t) == 3 * sizeof(s9_word_t),
+              "s9_node_t's size is not compatible with 3 contiguous "
+              "s9_word_t.");
 
 s9_node_t s9_node_of(const s9_opcode_t header,
                      const s9_word_t operand,
@@ -46,6 +53,7 @@ void s9_store_operand_in_node(s9_node_t * const node,
 bool s9_operand_is_stored_in_node(const s9_node_t node);
 s9_word_t s9_take_out_operand_from_node(s9_node_t * const node);
 s9_word_t s9_copy_operand_in_node(const s9_node_t node);
+s9_int_t s9_get_num_of_operands(const s9_header_t header);
 
 
 #endif // S9_NODE_H_

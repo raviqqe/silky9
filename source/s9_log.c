@@ -2,7 +2,7 @@
 
 
 void
-s9_print_log(const char * const format, ...)
+s9_print_log_(const char * const format, ...)
 {
   va_list variadic_args;
   va_start(variadic_args, format);

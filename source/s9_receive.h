@@ -5,7 +5,7 @@
 #include <assert.h>
 #include <mpi.h>
 
-#include "s9_protocol.h"
+#include "s9_network.h"
 #include "s9_signal.h"
 #include "s9_token.h"
 

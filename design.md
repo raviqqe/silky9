@@ -34,7 +34,7 @@ real    |  3
 
 category | name          |            id
 ---------|---------------|--------------:
-control  | shutdown      |             0
+control  | halt          |             0
 control  | copy          |             1
 control  | input         |             2
 control  | output        |             3
@@ -74,7 +74,7 @@ int      | +             |             1
 int      | \*            |             2
 real     | (same as int) | (same as int)
 
-* shutdown instruction doesn't take any constant operand
+* halt instruction doesn't take any constant operand
 * do the not operations by xor
 * int's 1/x seems not to be defined
 * definition of bool type is;

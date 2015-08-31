@@ -1,8 +1,6 @@
 program = s9
+go = go
 
-cc = clang
-cflags = -g -Wall -Isource
-ldflags = -L/usr/lib/openmpi -lmpi
 
 srcdir = source
 builddir = build
